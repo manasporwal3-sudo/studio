@@ -1,13 +1,12 @@
 
 'use client';
 
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, Terminal, Plus, ShoppingBag, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
 
 /**
  * Platform Activity Logs - Global Event Stream
@@ -15,7 +14,8 @@ import { useMemo } from "react";
 export function PlatformActivityLogs() {
   const db = useFirestore();
 
-  const logsQuery = useMemo(() => {
+  // Properly memoized using useMemoFirebase to prevent runtime errors
+  const logsQuery = useMemoFirebase(() => {
     return query(
       collection(db, 'platform_activity'),
       orderBy('timestamp', 'desc'),

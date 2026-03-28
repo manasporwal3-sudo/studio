@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useCollection, useFirestore, useUser } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { collectionGroup, query, where, limit, orderBy } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Brain, AlertCircle, TrendingDown, Cpu, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
 
 /**
  * AI Global Monitor - Platform-wide SKU Intelligence
@@ -18,8 +17,8 @@ export function AiGlobalMonitor() {
   const db = useFirestore();
 
   // Collection Group Query: Fetch all items across all inventory subcollections
-  // Note: This requires a composite index on collectionGroup 'inventory' in production.
-  const globalAtRiskQuery = useMemo(() => {
+  // Properly memoized using useMemoFirebase to prevent runtime errors
+  const globalAtRiskQuery = useMemoFirebase(() => {
     return query(
       collectionGroup(db, 'inventory'),
       where('currentStock', '<=', 5),
