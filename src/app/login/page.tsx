@@ -6,7 +6,7 @@ import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, ShieldCheck, Zap } from 'lucide-react';
+import { Brain, ShieldCheck, Zap, Fingerprint, User, Key } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useEffect } from 'react';
@@ -33,63 +33,110 @@ export default function LoginPage() {
     initiateAnonymousSignIn(auth);
   };
 
+  const quickAccess = (email: string, pass: string) => {
+    setEmail(email);
+    setPassword(pass);
+    initiateEmailSignIn(auth, email, pass);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden relative">
-      {/* Decorative Elements */}
+      {/* Quantum Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/20 rounded-full blur-[120px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/30 rounded-full blur-[160px] animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[160px] animate-pulse delay-700" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-10 bg-[radial-gradient(#3B82F6_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
 
-      <Card className="w-full max-w-md glass-panel border-white/5 relative z-10">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30">
-            <Brain className="w-8 h-8 text-primary" />
+      <Card className="w-full max-w-md glass-panel border-white/5 relative z-10 shadow-2xl backdrop-blur-2xl">
+        <CardHeader className="text-center space-y-4 pt-8">
+          <div className="mx-auto w-16 h-16 bg-primary/20 rounded-3xl flex items-center justify-center border border-primary/30 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+            <Fingerprint className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold font-headline tracking-tighter">NEURO-FAST LOGIN</CardTitle>
-            <CardDescription className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-              Secure Neural Access Protocol
+            <CardTitle className="text-3xl font-bold font-headline tracking-tighter uppercase italic">NEURO-FAST</CardTitle>
+            <CardDescription className="text-[10px] uppercase tracking-[0.4em] text-primary font-bold opacity-80">
+              System Access Interface v2.0
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="space-y-6 pt-4">
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Agent Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-black/20 border-white/10"
-                required
-              />
+            <div className="space-y-2 group">
+              <div className="relative">
+                <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  type="email"
+                  placeholder="AGENT IDENTITY"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-sm tracking-wide focus:border-primary/50"
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="Access Key"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-black/20 border-white/10"
-                required
-              />
+            <div className="space-y-2 group">
+              <div className="relative">
+                <Key className="absolute left-3 top-3 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  type="password"
+                  placeholder="NEURAL KEY"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-sm tracking-wide focus:border-primary/50"
+                  required
+                />
+              </div>
             </div>
-            <Button type="submit" className="w-full font-bold">
-              <ShieldCheck className="w-4 h-4 mr-2" /> ESTABLISH LINK
+            <Button type="submit" className="w-full h-12 font-bold uppercase tracking-widest text-sm shadow-lg shadow-primary/20 group">
+              <ShieldCheck className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" /> 
+              ESTABLISH UPLINK
             </Button>
           </form>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold text-muted-foreground">
-              <span className="bg-[#0a0f1a] px-2">Alternative Access</span>
+
+          {/* Trial Access Section */}
+          <div className="space-y-3">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
+              <div className="relative flex justify-center text-[10px] uppercase font-bold text-muted-foreground">
+                <span className="bg-[#0D1526] px-3">TRIAL NODE AUTHENTICATION</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => quickAccess('agent.alpha@neurofast.ai', 'AlphaNode2024')}
+                className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
+              >
+                <span className="text-[10px] font-bold text-primary">AGENT ALPHA</span>
+                <span className="text-[8px] opacity-40 font-mono">AlphaNode2024</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => quickAccess('agent.beta@neurofast.ai', 'BetaNode2024')}
+                className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
+              >
+                <span className="text-[10px] font-bold text-primary">AGENT BETA</span>
+                <span className="text-[8px] opacity-40 font-mono">BetaNode2024</span>
+              </Button>
             </div>
           </div>
-          <Button variant="outline" onClick={handleGuestLogin} className="w-full border-white/10 hover:bg-white/5">
-            <Zap className="w-4 h-4 mr-2" /> GUEST NEURAL NODE
+        </CardContent>
+
+        <CardFooter className="flex flex-col gap-4 pb-8">
+          <Button 
+            variant="ghost" 
+            onClick={handleGuestLogin} 
+            className="w-full h-10 text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/10"
+          >
+            <Zap className="w-3 h-3 mr-2" /> ANONYMOUS NEURAL NODE
           </Button>
+          
+          <p className="text-[8px] text-center text-muted-foreground/40 uppercase tracking-[0.3em] font-mono">
+            SECURED BY NEURO-FAST QUANTUM ENCRYPTION
+          </p>
         </CardFooter>
       </Card>
     </div>
