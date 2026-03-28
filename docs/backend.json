@@ -1,57 +1,98 @@
 {
   "entities": {
-    "UserProfile": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserProfile",
+      "title": "User",
       "type": "object",
-      "description": "Represents a user of the Neuro-Fast system, storing their profile details and roles. Assumes authentication is handled by an external system, with 'id' referencing the external user identifier.",
+      "description": "Represents a registered user of the Neuro-Fast platform, holding application-specific profile data and role assignments.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the UserProfile entity, typically mapping to an external authentication system's user ID."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address, used for communication and identification.",
-          "format": "email"
+          "description": "Unique identifier for the User entity."
         },
         "firstName": {
           "type": "string",
-          "description": "The first name of the user."
+          "description": "The user's first name."
         },
         "lastName": {
           "type": "string",
-          "description": "The last name of the user."
+          "description": "The user's last name."
         },
-        "role": {
+        "email": {
           "type": "string",
-          "description": "The role assigned to the user within the system (e.g., 'Admin', 'Store Manager', 'Procurement Agent')."
+          "description": "The user's email address, primarily for contact and identification within the application.",
+          "format": "email"
         },
-        "darkStoreIds": {
+        "phoneNumber": {
+          "type": "string",
+          "description": "The user's contact phone number."
+        },
+        "roleIds": {
           "type": "array",
-          "description": "References to DarkStores this user has access to or manages. (Relationship: UserProfile N:N DarkStore)",
+          "description": "References to Roles assigned to the user, defining permissions and responsibilities. (Relationship: User N:N Role)",
           "items": {
             "type": "string"
           }
         },
-        "preferences": {
+        "createdAt": {
           "type": "string",
-          "description": "User-specific settings and preferences, such as UI theme or notification settings, stored as a JSON string or similar."
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was last updated.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
-        "email",
         "firstName",
         "lastName",
-        "role"
+        "email",
+        "roleIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Role": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Role",
+      "type": "object",
+      "description": "Defines a user's permissions and responsibilities within the Neuro-Fast system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Role entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the role (e.g., 'DarkStore Manager', 'Rider', 'Admin')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the role's purpose and responsibilities."
+        },
+        "permissions": {
+          "type": "array",
+          "description": "A list of granular permissions associated with this role (e.g., 'view_inventory', 'manage_forecasts').",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "permissions"
       ]
     },
     "DarkStore": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "DarkStore",
       "type": "object",
-      "description": "Represents a quick-commerce dark store location where inventory is managed and orders are fulfilled.",
+      "description": "Represents a quick-commerce dark store location, a central hub for inventory and deliveries.",
       "properties": {
         "id": {
           "type": "string",
@@ -59,60 +100,141 @@
         },
         "name": {
           "type": "string",
-          "description": "The operational name of the dark store."
+          "description": "The name of the dark store (e.g., 'Neuro-Fast London North')."
         },
         "address": {
           "type": "string",
-          "description": "The physical street address of the dark store."
+          "description": "The street address of the dark store."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the dark store is located."
+        },
+        "state": {
+          "type": "string",
+          "description": "The state or province where the dark store is located."
+        },
+        "zipCode": {
+          "type": "string",
+          "description": "The postal or ZIP code of the dark store."
+        },
+        "country": {
+          "type": "string",
+          "description": "The country where the dark store is located."
         },
         "latitude": {
           "type": "number",
-          "description": "Geographical latitude of the dark store for map visualization and logistics."
+          "description": "The geographical latitude coordinate of the dark store."
         },
         "longitude": {
           "type": "number",
-          "description": "Geographical longitude of the dark store for map visualization and logistics."
+          "description": "The geographical longitude coordinate of the dark store."
+        },
+        "managerUserId": {
+          "type": "string",
+          "description": "Reference to the User who is the primary manager of this dark store. (Relationship: User 1:N DarkStore)"
         },
         "status": {
           "type": "string",
-          "description": "The current operational status of the dark store (e.g., 'Active', 'Inactive', 'Under Maintenance')."
+          "description": "The current operational status of the dark store (e.g., 'Operational', 'Planned', 'Closed')."
         },
-        "contactEmail": {
+        "openingHours": {
           "type": "string",
-          "description": "Contact email for the dark store manager.",
-          "format": "email"
+          "description": "A textual representation of the dark store's operating hours (e.g., 'Mon-Fri 8am-8pm')."
         },
-        "contactPhone": {
+        "createdAt": {
           "type": "string",
-          "description": "Contact phone number for the dark store."
+          "description": "Timestamp when the dark store record was created.",
+          "format": "date-time"
         },
-        "integrationConfigurationId": {
+        "updatedAt": {
           "type": "string",
-          "description": "Reference to the IntegrationConfiguration used for this dark store's POS or other systems. (Relationship: DarkStore 1:N IntegrationConfiguration - conceptually, one store uses one main POS integration)"
+          "description": "Timestamp when the dark store record was last updated.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
         "name",
         "address",
+        "city",
+        "zipCode",
+        "country",
         "latitude",
         "longitude",
-        "status"
+        "managerUserId",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Rider": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Rider",
+      "type": "object",
+      "description": "Represents a delivery rider associated with one or more dark stores.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Rider entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the associated User profile for the rider. (Relationship: User 1:1 Rider)"
+        },
+        "darkStoreIds": {
+          "type": "array",
+          "description": "References to DarkStores the rider is associated with for deliveries. (Relationship: Rider N:N DarkStore)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "currentStatus": {
+          "type": "string",
+          "description": "The rider's current operational status (e.g., 'Available', 'On Delivery', 'Offline')."
+        },
+        "vehicleType": {
+          "type": "string",
+          "description": "The type of vehicle used by the rider (e.g., 'Bicycle', 'Motorbike', 'Car')."
+        },
+        "licenseNumber": {
+          "type": "string",
+          "description": "The rider's driver's license or equivalent identification number."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the rider record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the rider record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "darkStoreIds",
+        "currentStatus",
+        "vehicleType",
+        "createdAt",
+        "updatedAt"
       ]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents a single Stock Keeping Unit (SKU) available in dark stores. This entity holds general product information.",
+      "description": "Defines a generic product (SKU) that can be stocked across multiple dark stores.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Product entity."
         },
-        "skuCode": {
+        "sku": {
           "type": "string",
-          "description": "The unique SKU code for the product, often used for external system integration."
+          "description": "The Stock Keeping Unit, a globally unique identifier for the product."
         },
         "name": {
           "type": "string",
@@ -124,164 +246,101 @@
         },
         "category": {
           "type": "string",
-          "description": "The category the product belongs to (e.g., 'Dairy', 'Snacks', 'Beverages')."
-        },
-        "unitOfMeasure": {
-          "type": "string",
-          "description": "The unit in which the product is typically measured or sold (e.g., 'unit', 'kg', 'liter')."
+          "description": "The product category (e.g., 'Dairy', 'Baked Goods', 'Beverages')."
         },
         "imageUrl": {
           "type": "string",
-          "description": "URL to an image of the product for display purposes.",
+          "description": "URL to an image of the product.",
           "format": "uri"
         },
-        "vendorIds": {
-          "type": "array",
-          "description": "References to Vendors that supply this product. (Relationship: Product N:N Vendor)",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "skuCode",
-        "name",
-        "category",
-        "unitOfMeasure"
-      ]
-    },
-    "Vendor": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Vendor",
-      "type": "object",
-      "description": "Represents a supplier or vendor from whom products can be procured.",
-      "properties": {
-        "id": {
+        "brand": {
           "type": "string",
-          "description": "Unique identifier for the Vendor entity."
+          "description": "The brand name of the product."
         },
-        "name": {
+        "unitOfMeasure": {
           "type": "string",
-          "description": "The official name of the vendor or supplier."
+          "description": "The standard unit of measure for this product (e.g., 'pcs', 'kg', 'liter')."
         },
-        "contactEmail": {
+        "vendorId": {
           "type": "string",
-          "description": "Primary contact email for the vendor.",
-          "format": "email"
+          "description": "Reference to the primary Vendor supplying this product. (Relationship: Vendor 1:N Product)"
         },
-        "contactPhone": {
+        "createdAt": {
           "type": "string",
-          "description": "Primary contact phone number for the vendor."
-        },
-        "address": {
-          "type": "string",
-          "description": "The physical address of the vendor."
-        },
-        "integrationConfigurationId": {
-          "type": "string",
-          "description": "Reference to the IntegrationConfiguration used for API communication with this vendor. (Relationship: Vendor 1:N IntegrationConfiguration - conceptually, one vendor uses one main API integration)"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "contactEmail"
-      ]
-    },
-    "IntegrationConfiguration": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "IntegrationConfiguration",
-      "type": "object",
-      "description": "Stores configuration details required to connect and synchronize data with external systems like Point of Sale (POS), Enterprise Resource Planning (ERP), or Vendor APIs.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the IntegrationConfiguration entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "A descriptive name for the integration (e.g., 'DarkStore A POS', 'Vendor X API')."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of external system being integrated (e.g., 'POS', 'VendorAPI', 'ERP')."
-        },
-        "endpointUrl": {
-          "type": "string",
-          "description": "The base URL for the external system's API endpoint.",
-          "format": "uri"
-        },
-        "apiKeyName": {
-          "type": "string",
-          "description": "The name of the API key or token to be used for authentication. The actual key value is not stored here for security reasons, assumed to be handled by secrets management."
-        },
-        "lastSynced": {
-          "type": "string",
-          "description": "Timestamp of the last successful data synchronization with this external system.",
+          "description": "Timestamp when the product record was created.",
           "format": "date-time"
         },
-        "status": {
+        "updatedAt": {
           "type": "string",
-          "description": "The current connection status of the integration (e.g., 'Connected', 'Disconnected', 'Error')."
+          "description": "Timestamp when the product record was last updated.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
+        "sku",
         "name",
-        "type",
-        "endpointUrl",
-        "status"
+        "description",
+        "category",
+        "unitOfMeasure",
+        "vendorId",
+        "createdAt",
+        "updatedAt"
       ]
     },
-    "Inventory": {
+    "InventoryItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Inventory",
+      "title": "InventoryItem",
       "type": "object",
-      "description": "Represents the current stock level of a specific product at a particular dark store, crucial for real-time inventory synchronization.",
+      "description": "Represents the specific stock level and details of a Product at a particular DarkStore.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Inventory entity."
-        },
-        "darkStoreId": {
-          "type": "string",
-          "description": "Reference to the DarkStore where this inventory is located. (Relationship: DarkStore 1:N Inventory)"
+          "description": "Unique identifier for the InventoryItem entity."
         },
         "productId": {
           "type": "string",
-          "description": "Reference to the Product (SKU) whose stock level is being tracked. (Relationship: Product 1:N Inventory)"
+          "description": "Reference to the Product definition. (Relationship: Product 1:N InventoryItem)"
         },
-        "currentStockLevel": {
-          "type": "number",
-          "description": "The current quantity of the product in stock at the dark store."
+        "darkStoreId": {
+          "type": "string",
+          "description": "Reference to the DarkStore where this inventory is held. (Relationship: DarkStore 1:N InventoryItem)"
         },
-        "reorderPoint": {
+        "currentStock": {
           "type": "number",
-          "description": "The stock level at which a new order should be triggered for this product at this store."
+          "description": "The current quantity of the product available in stock at the dark store."
+        },
+        "minStockLevel": {
+          "type": "number",
+          "description": "The minimum desired stock level for this item, triggering alerts if below."
         },
         "maxStockLevel": {
           "type": "number",
-          "description": "The maximum desired stock level for this product at this store."
+          "description": "The maximum desired stock level for this item, used for optimizing order quantities."
         },
-        "status": {
-          "type": "string",
-          "description": "The inventory status based on stock levels (e.g., 'In Stock', 'Low Stock', 'Out of Stock')."
+        "costPrice": {
+          "type": "number",
+          "description": "The cost price of a single unit of this product."
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "The selling price of a single unit of this product."
         },
         "lastUpdated": {
           "type": "string",
-          "description": "Timestamp of the last update to this inventory record, reflecting real-time synchronization.",
+          "description": "Timestamp of the last update to the stock level or inventory details.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "darkStoreId",
         "productId",
-        "currentStockLevel",
-        "reorderPoint",
+        "darkStoreId",
+        "currentStock",
+        "minStockLevel",
         "maxStockLevel",
-        "status",
+        "costPrice",
+        "sellingPrice",
         "lastUpdated"
       ]
     },
@@ -289,7 +348,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SalesRecord",
       "type": "object",
-      "description": "Captures individual sales transactions for products at a dark store, providing historical data essential for demand forecasting.",
+      "description": "Records individual sales transactions, crucial for calculating real-time sales velocity and demand.",
       "properties": {
         "id": {
           "type": "string",
@@ -301,7 +360,7 @@
         },
         "productId": {
           "type": "string",
-          "description": "Reference to the Product (SKU) that was sold. (Relationship: Product 1:N SalesRecord)"
+          "description": "Reference to the Product sold. (Relationship: Product 1:N SalesRecord)"
         },
         "quantitySold": {
           "type": "number",
@@ -309,16 +368,16 @@
         },
         "salePrice": {
           "type": "number",
-          "description": "The price at which the product was sold in this transaction."
+          "description": "The price at which a single unit of the product was sold."
         },
-        "saleDateTime": {
+        "saleTimestamp": {
           "type": "string",
-          "description": "The precise date and time when the sale occurred.",
+          "description": "Timestamp when the sale occurred.",
           "format": "date-time"
         },
         "transactionId": {
           "type": "string",
-          "description": "An identifier from the external Point of Sale (POS) system for the complete transaction."
+          "description": "A unique identifier for the broader transaction or order this sale belongs to, if applicable."
         }
       },
       "required": [
@@ -327,68 +386,123 @@
         "productId",
         "quantitySold",
         "salePrice",
-        "saleDateTime",
+        "saleTimestamp",
         "transactionId"
       ]
     },
-    "DemandForecast": {
+    "Forecast": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DemandForecast",
+      "title": "Forecast",
       "type": "object",
-      "description": "Stores the AI-generated predictions for future product demand, providing insights for proactive inventory management.",
+      "description": "Stores predictive demand forecasts generated by the AI for specific inventory items over defined periods.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the DemandForecast entity."
+          "description": "Unique identifier for the Forecast entity."
         },
-        "darkStoreId": {
+        "inventoryItemId": {
           "type": "string",
-          "description": "Reference to the DarkStore for which the demand is forecasted. (Relationship: DarkStore 1:N DemandForecast)"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to the Product (SKU) for which demand is forecasted. (Relationship: Product 1:N DemandForecast)"
+          "description": "Reference to the InventoryItem for which this forecast is made. (Relationship: InventoryItem 1:N Forecast)"
         },
         "forecastPeriodStart": {
           "type": "string",
-          "description": "The start date and time of the period for which demand is forecasted.",
+          "description": "The start timestamp of the period for which the forecast is valid.",
           "format": "date-time"
         },
         "forecastPeriodEnd": {
           "type": "string",
-          "description": "The end date and time of the period for which demand is forecasted (e.g., 4 hours from start).",
+          "description": "The end timestamp of the period for which the forecast is valid.",
           "format": "date-time"
         },
-        "predictedDemandQuantity": {
+        "predictedDemand": {
           "type": "number",
-          "description": "The AI's predicted quantity of the product that will be demanded during the forecast period."
+          "description": "The predicted quantity of demand for the inventory item during the forecast period."
         },
         "confidenceScore": {
           "type": "number",
-          "description": "A score (0-1) indicating the AI's confidence in the accuracy of this forecast."
+          "description": "A score indicating the AI model's confidence in the accuracy of this prediction (e.g., 0 to 1)."
         },
-        "generatedDateTime": {
+        "generatedAt": {
           "type": "string",
-          "description": "The date and time when this forecast was generated by the AI.",
+          "description": "Timestamp when this forecast was generated by the AI model.",
+          "format": "date-time"
+        },
+        "modelVersion": {
+          "type": "string",
+          "description": "Identifier or version of the AI model used to generate this forecast."
+        }
+      },
+      "required": [
+        "id",
+        "inventoryItemId",
+        "forecastPeriodStart",
+        "forecastPeriodEnd",
+        "predictedDemand",
+        "confidenceScore",
+        "generatedAt",
+        "modelVersion"
+      ]
+    },
+    "Vendor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vendor",
+      "type": "object",
+      "description": "Represents a supplier of products to the dark stores.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Vendor entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the vendor or supplier."
+        },
+        "contactPerson": {
+          "type": "string",
+          "description": "The primary contact person at the vendor."
+        },
+        "email": {
+          "type": "string",
+          "description": "The contact email address for the vendor.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number for the vendor."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the vendor."
+        },
+        "apiEndpoint": {
+          "type": "string",
+          "description": "Optional API endpoint for automated interaction with the vendor's systems.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the vendor record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the vendor record was last updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "darkStoreId",
-        "productId",
-        "forecastPeriodStart",
-        "forecastPeriodEnd",
-        "predictedDemandQuantity",
-        "confidenceScore",
-        "generatedDateTime"
+        "name",
+        "email",
+        "createdAt",
+        "updatedAt"
       ]
     },
     "ProcurementOrder": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ProcurementOrder",
       "type": "object",
-      "description": "Represents an order placed or suggested to a vendor for restocking, potentially generated by the autonomous procurement agent.",
+      "description": "Represents an order placed or suggested for restocking inventory at a dark store.",
       "properties": {
         "id": {
           "type": "string",
@@ -396,54 +510,62 @@
         },
         "darkStoreId": {
           "type": "string",
-          "description": "Reference to the DarkStore that initiated or will receive this order. (Relationship: DarkStore 1:N ProcurementOrder)"
+          "description": "Reference to the DarkStore initiating the procurement order. (Relationship: DarkStore 1:N ProcurementOrder)"
         },
         "vendorId": {
           "type": "string",
-          "description": "Reference to the Vendor from whom the products are ordered. (Relationship: Vendor 1:N ProcurementOrder)"
+          "description": "Reference to the Vendor from whom items are ordered. (Relationship: Vendor 1:N ProcurementOrder)"
         },
-        "orderDateTime": {
+        "generatedByUserId": {
           "type": "string",
-          "description": "The date and time when the procurement order was created or suggested.",
-          "format": "date-time"
-        },
-        "expectedDeliveryDateTime": {
-          "type": "string",
-          "description": "The anticipated date and time for the delivery of the ordered items.",
-          "format": "date-time"
+          "description": "Reference to the User who generated or approved the procurement order. Can also indicate system/AI generation if applicable. (Relationship: User 1:N ProcurementOrder)"
         },
         "status": {
           "type": "string",
-          "description": "The current status of the order (e.g., 'Suggested', 'Pending', 'Ordered', 'Shipped', 'Received', 'Cancelled')."
+          "description": "The current status of the procurement order (e.g., 'Suggested', 'Pending Approval', 'Approved', 'Ordered', 'Received', 'Cancelled')."
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Timestamp when the procurement order was created or suggested.",
+          "format": "date-time"
+        },
+        "expectedDeliveryDate": {
+          "type": "string",
+          "description": "The anticipated date and time of delivery for the ordered items.",
+          "format": "date-time"
         },
         "totalCost": {
           "type": "number",
-          "description": "The total estimated or actual cost of the procurement order."
+          "description": "The calculated total cost of all items in the procurement order."
         },
-        "generatedByAI": {
-          "type": "boolean",
-          "description": "Indicates whether this procurement order was initially generated by the AI agent."
-        },
-        "generatedFromForecastId": {
+        "createdAt": {
           "type": "string",
-          "description": "Optional reference to the DemandForecast that prompted this procurement order. (Relationship: DemandForecast 1:N ProcurementOrder)"
+          "description": "Timestamp when the procurement order record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the procurement order record was last updated.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
         "darkStoreId",
         "vendorId",
-        "orderDateTime",
+        "generatedByUserId",
         "status",
+        "orderDate",
         "totalCost",
-        "generatedByAI"
+        "createdAt",
+        "updatedAt"
       ]
     },
     "ProcurementOrderItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ProcurementOrderItem",
       "type": "object",
-      "description": "Represents a single line item within a ProcurementOrder, detailing the specific product and quantity ordered.",
+      "description": "Represents an individual line item within a ProcurementOrder.",
       "properties": {
         "id": {
           "type": "string",
@@ -451,19 +573,27 @@
         },
         "procurementOrderId": {
           "type": "string",
-          "description": "Reference to the parent ProcurementOrder this item belongs to. (Relationship: ProcurementOrder 1:N ProcurementOrderItem)"
+          "description": "Reference to the Procurement Order this item belongs to. (Relationship: ProcurementOrder 1:N ProcurementOrderItem)"
         },
         "productId": {
           "type": "string",
-          "description": "Reference to the Product (SKU) being ordered. (Relationship: Product 1:N ProcurementOrderItem)"
+          "description": "Reference to the Product being ordered. (Relationship: Product 1:N ProcurementOrderItem)"
         },
         "orderedQuantity": {
           "type": "number",
-          "description": "The quantity of the product specified in this order item."
+          "description": "The quantity of the product requested in this order item."
         },
-        "unitPrice": {
+        "unitPriceAtOrder": {
           "type": "number",
-          "description": "The price per unit for this product as part of this order."
+          "description": "The price per unit of the product at the time the order was placed."
+        },
+        "receivedQuantity": {
+          "type": "number",
+          "description": "The actual quantity of the product received for this order item."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of this specific order item (e.g., 'Ordered', 'Received', 'Shortage', 'Backordered')."
         }
       },
       "required": [
@@ -471,14 +601,14 @@
         "procurementOrderId",
         "productId",
         "orderedQuantity",
-        "unitPrice"
+        "unitPriceAtOrder"
       ]
     },
     "Alert": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Alert",
       "type": "object",
-      "description": "Represents a system-generated notification or warning requiring user attention, often triggered by AI insights or critical inventory conditions.",
+      "description": "Represents a system-generated notification or warning based on inventory, forecasts, or operational conditions.",
       "properties": {
         "id": {
           "type": "string",
@@ -488,45 +618,50 @@
           "type": "string",
           "description": "Reference to the DarkStore to which this alert pertains. (Relationship: DarkStore 1:N Alert)"
         },
-        "productId": {
+        "inventoryItemId": {
           "type": "string",
-          "description": "Optional reference to the Product (SKU) if the alert is product-specific. (Relationship: Product 1:N Alert)"
+          "description": "Reference to the InventoryItem the alert is about, if applicable. (Relationship: InventoryItem 1:N Alert)"
         },
         "type": {
           "type": "string",
-          "description": "The category or nature of the alert (e.g., 'Low Stock', 'Ghost Stock Detected', 'Demand Spike', 'Integration Error')."
+          "description": "The category or type of the alert (e.g., 'Low Stock', 'High Demand', 'Delivery Delay')."
         },
         "message": {
           "type": "string",
-          "description": "A detailed descriptive message explaining the alert."
+          "description": "A detailed message describing the alert."
         },
         "severity": {
           "type": "string",
-          "description": "The urgency or impact level of the alert (e.g., 'Critical', 'Warning', 'Info')."
+          "description": "The severity level of the alert (e.g., 'Critical', 'Warning', 'Info')."
         },
-        "generatedDateTime": {
+        "status": {
           "type": "string",
-          "description": "The date and time when the alert was generated by the system.",
+          "description": "The current status of the alert (e.g., 'New', 'Acknowledged', 'Resolved')."
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "Timestamp when the alert was generated by the system.",
           "format": "date-time"
         },
-        "isDismissed": {
-          "type": "boolean",
-          "description": "Indicates whether the user has acknowledged or dismissed this alert."
-        },
-        "dismissedDateTime": {
+        "resolvedByUserId": {
           "type": "string",
-          "description": "The date and time when the alert was dismissed, if applicable.",
+          "description": "Optional reference to the User who acknowledged or resolved this alert. (Relationship: User 1:N Alert)"
+        },
+        "resolvedAt": {
+          "type": "string",
+          "description": "Optional timestamp when the alert was resolved.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "darkStoreId",
+        "inventoryItemId",
         "type",
         "message",
         "severity",
-        "generatedDateTime",
-        "isDismissed"
+        "status",
+        "generatedAt"
       ]
     }
   },
@@ -539,23 +674,51 @@
   "firestore": {
     "structure": [
       {
-        "path": "/userProfiles/{userId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "UserProfile",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores individual user profile data. Access is strictly limited to the user themselves (path-based ownership). The 'darkStoreIds' field provides a list of DarkStores the user is associated with, used for client-side discovery of accessible stores."
+          "description": "Stores core user profiles. Each user can access their own document. Admins may have broader access via dedicated roles. This document is private to the user; any collaborative data is handled separately or through denormalization.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, typically matching Firebase Authentication UID."
+            }
+          ]
         }
       },
       {
-        "path": "/global_managers/{userId}",
+        "path": "/app_roles/{roleId}",
         "definition": {
-          "entityName": "GlobalManagerRole",
+          "entityName": "Role",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/backend/entities/Role"
           },
-          "description": "Represents users with global management privileges (e.g., for 'Product' or 'Vendor' collections). Authorization is based on the existence of a document for the 'userId', adhering to DBAC principles (Existence over Content)."
+          "description": "Defines system-wide roles and their associated permissions. These are static definitions, primarily read-only for most users, and managed by application administrators. Not used directly for authorization checks, but for role content.",
+          "params": [
+            {
+              "name": "roleId",
+              "description": "The unique identifier for the role (e.g., 'darkstore_manager', 'rider')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/app_admins/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "A dedicated collection for application administrators. Presence of a document with the user's UID in this collection grants admin privileges, enabling efficient DBAC checks with `exists()`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who holds the 'admin' role."
+            }
+          ]
         }
       },
       {
@@ -565,77 +728,29 @@
           "schema": {
             "$ref": "#/backend/entities/DarkStore"
           },
-          "description": "Master data for a specific dark store location. Includes a denormalized 'members' map (e.g., `{uid: 'role'}`) to define user-specific roles and permissions for access to this DarkStore and all its subcollection data, ensuring Authorization Independence."
+          "description": "Represents individual dark store locations. Each document includes `managerUserId` and a denormalized `members` map (`{uid: 'role'}`) for explicit authorization across the dark store and its subcollections, ensuring Authorization Independence for all related data.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier for a specific dark store."
+            }
+          ]
         }
       },
       {
-        "path": "/darkStores/{darkStoreId}/integrationConfigurations/{integrationConfigurationId}",
+        "path": "/riders/{riderId}",
         "definition": {
-          "entityName": "IntegrationConfiguration",
+          "entityName": "Rider",
           "schema": {
-            "$ref": "#/backend/entities/IntegrationConfiguration"
+            "$ref": "#/backend/entities/Rider"
           },
-          "description": "Configuration details for an external system integrated with a specific dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/inventory/{inventoryId}",
-        "definition": {
-          "entityName": "Inventory",
-          "schema": {
-            "$ref": "#/backend/entities/Inventory"
-          },
-          "description": "Real-time stock levels of a product at a specific dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/salesRecords/{salesRecordId}",
-        "definition": {
-          "entityName": "SalesRecord",
-          "schema": {
-            "$ref": "#/backend/entities/SalesRecord"
-          },
-          "description": "Historical sales transactions for a product at a specific dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/demandForecasts/{demandForecastId}",
-        "definition": {
-          "entityName": "DemandForecast",
-          "schema": {
-            "$ref": "#/backend/entities/DemandForecast"
-          },
-          "description": "AI-generated demand predictions for a product at a specific dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/procurementOrders/{procurementOrderId}",
-        "definition": {
-          "entityName": "ProcurementOrder",
-          "schema": {
-            "$ref": "#/backend/entities/ProcurementOrder"
-          },
-          "description": "An order placed or suggested for restocking a specific dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/procurementOrders/{procurementOrderId}/items/{procurementOrderItemId}",
-        "definition": {
-          "entityName": "ProcurementOrderItem",
-          "schema": {
-            "$ref": "#/backend/entities/ProcurementOrderItem"
-          },
-          "description": "A line item within a specific procurement order. Includes denormalized 'darkStoreId', 'procurementOrderId', and the 'members' map from the originating DarkStore for Authorization Independence."
-        }
-      },
-      {
-        "path": "/darkStores/{darkStoreId}/alerts/{alertId}",
-        "definition": {
-          "entityName": "Alert",
-          "schema": {
-            "$ref": "#/backend/entities/Alert"
-          },
-          "description": "System-generated alerts specific to a dark store. Includes denormalized 'darkStoreId' and the 'members' map from the parent DarkStore for Authorization Independence."
+          "description": "Stores profiles for delivery riders. The `riderId` matches the associated `User.id` for self-ownership. Includes `userId` and a `darkStoreMemberships` map (`{darkStoreId: {role: 'associated_rider', managerId: 'darkStoreManagerUid'}}`) denormalizing manager UIDs from associated DarkStores, enabling secure list/read for managers (QAP) without `get()` calls.",
+          "params": [
+            {
+              "name": "riderId",
+              "description": "The unique identifier for the rider, which is typically the associated user's UID."
+            }
+          ]
         }
       },
       {
@@ -645,7 +760,13 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Global catalog of products (SKUs). Generally read-only for most users, write access controlled by 'global_managers' collection."
+          "description": "A global catalog of products. These documents are generally read-only for most users and managed by administrators or system processes.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for a specific product."
+            }
+          ]
         }
       },
       {
@@ -655,20 +776,144 @@
           "schema": {
             "$ref": "#/backend/entities/Vendor"
           },
-          "description": "Global catalog of product vendors. Includes a denormalized 'members' map (e.g., `{uid: 'role'}`) to define user-specific roles and permissions for managing this vendor and its subcollection data, ensuring Authorization Independence."
+          "description": "A global list of product vendors/suppliers. These documents are generally read-only for most users and managed by administrators or procurement managers.",
+          "params": [
+            {
+              "name": "vendorId",
+              "description": "The unique identifier for a specific vendor."
+            }
+          ]
         }
       },
       {
-        "path": "/vendors/{vendorId}/integrationConfigurations/{integrationConfigurationId}",
+        "path": "/darkStores/{darkStoreId}/inventoryItems/{inventoryItemId}",
         "definition": {
-          "entityName": "IntegrationConfiguration",
+          "entityName": "InventoryItem",
           "schema": {
-            "$ref": "#/backend/entities/IntegrationConfiguration"
+            "$ref": "#/backend/entities/InventoryItem"
           },
-          "description": "Configuration details for an external system integrated with a specific vendor. Includes denormalized 'vendorId' and the 'members' map from the parent Vendor for Authorization Independence."
+          "description": "Represents specific stock levels of a product at a given dark store. Includes denormalized `darkStoreMembers` map from the parent `DarkStore` for authorization independence, enabling direct rule evaluation.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the parent dark store."
+            },
+            {
+              "name": "inventoryItemId",
+              "description": "The unique identifier for a specific inventory item within the dark store."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/darkStores/{darkStoreId}/salesRecords/{salesRecordId}",
+        "definition": {
+          "entityName": "SalesRecord",
+          "schema": {
+            "$ref": "#/backend/entities/SalesRecord"
+          },
+          "description": "Records individual sales transactions at a dark store. Includes denormalized `darkStoreMembers` map from the parent `DarkStore` for authorization independence.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the parent dark store."
+            },
+            {
+              "name": "salesRecordId",
+              "description": "The unique identifier for a specific sales record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/darkStores/{darkStoreId}/inventoryItems/{inventoryItemId}/forecasts/{forecastId}",
+        "definition": {
+          "entityName": "Forecast",
+          "schema": {
+            "$ref": "#/backend/entities/Forecast"
+          },
+          "description": "Stores predictive demand forecasts for specific inventory items. Includes denormalized `darkStoreMembers` map from the grandparent `DarkStore` for authorization independence.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the grandparent dark store."
+            },
+            {
+              "name": "inventoryItemId",
+              "description": "The unique identifier of the parent inventory item."
+            },
+            {
+              "name": "forecastId",
+              "description": "The unique identifier for a specific forecast."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/darkStores/{darkStoreId}/procurementOrders/{procurementOrderId}",
+        "definition": {
+          "entityName": "ProcurementOrder",
+          "schema": {
+            "$ref": "#/backend/entities/ProcurementOrder"
+          },
+          "description": "Represents an order placed or suggested for restocking inventory. Includes denormalized `darkStoreMembers` map from the parent `DarkStore` for authorization independence.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the parent dark store."
+            },
+            {
+              "name": "procurementOrderId",
+              "description": "The unique identifier for a specific procurement order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/darkStores/{darkStoreId}/procurementOrders/{procurementOrderId}/items/{procurementOrderItemId}",
+        "definition": {
+          "entityName": "ProcurementOrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/ProcurementOrderItem"
+          },
+          "description": "Represents an individual line item within a procurement order. Includes denormalized `darkStoreMembers` map from the grandparent `DarkStore` for authorization independence.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the grandparent dark store."
+            },
+            {
+              "name": "procurementOrderId",
+              "description": "The unique identifier of the parent procurement order."
+            },
+            {
+              "name": "procurementOrderItemId",
+              "description": "The unique identifier for a specific procurement order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/darkStores/{darkStoreId}/alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": {
+            "$ref": "#/backend/entities/Alert"
+          },
+          "description": "Stores system-generated notifications or warnings. Includes denormalized `darkStoreMembers` map from the parent `DarkStore` for authorization independence.",
+          "params": [
+            {
+              "name": "darkStoreId",
+              "description": "The unique identifier of the parent dark store."
+            },
+            {
+              "name": "alertId",
+              "description": "The unique identifier for a specific alert."
+            }
+          ]
         }
       }
     ],
-    "reasoning": "The Neuro-Fast Firestore structure is designed with a strong emphasis on Authorization Independence, Structural Segregation, and DBAC principles to ensure security, scalability, and debuggability. All authorization logic is kept explicit within the data model itself, eliminating the need for `get()` calls in security rules, which is critical for atomic operations and maintainable rules.\n\n**Authorization Independence via Denormalization:**\n\n*   **DarkStore-Level Access Control:** The core of authorization revolves around the `DarkStore` entity. Each `DarkStore` document (`/darkStores/{darkStoreId}`) will contain a `members` map (e.g., `members: { [userId]: \"role\" }`) to define granular access rights for specific users within that store. This map is the single source of truth for authorization for the dark store itself.\n*   **Subcollection Denormalization:** To achieve true authorization independence for all subcollections (e.g., `inventory`, `salesRecords`, `demandForecasts`, `procurementOrders`, `alerts`, `integrationConfigurations`), every document within these subcollections will denormalize both the `darkStoreId` (if not already part of the path) and a copy of the `members` map from its parent `DarkStore`. This means that any operation on a subcollection document can be authorized by simply checking `request.auth.uid in resource.data.members`, without needing to read the parent `DarkStore` document. This design choice enables robust security rules that are simple, clear, and atomic.\n*   **Vendor-Specific Data:** Similar to DarkStores, each `Vendor` document will also include a `members` map to control access to vendor-specific `integrationConfigurations` subcollections, ensuring authorization independence for vendor data as well.\n*   **Global Roles (DBAC):** For system-level administrators (e.g., those managing global `Product` and `Vendor` catalogs), a dedicated collection (`/global_managers/{userId}`) is used. The mere existence of a document for a specific `userId` in this collection grants the corresponding global role, adhering to the 'Existence over Content' principle for DBAC without relying on custom claims.\n\n**QAPs (Queries as per Security Rules) Support:**\n\nThe structure facilitates secure `list` operations (QAPs) by design:\n\n*   **User-Specific Data (`/userProfiles/{userId}`):** Access is strictly path-based, `request.auth.uid == userId`, making `get()` and `list` queries for a user's own profile highly efficient and secure.\n*   **Discovering Authorized Dark Stores:** Users can query their own `UserProfile` document (`/userProfiles/{request.auth.uid}`) to retrieve the `darkStoreIds` array. This array provides a list of all dark stores the user is associated with. The client-side application can then iterate through these IDs to fetch specific `DarkStore` documents or initiate queries against their subcollections, relying on the `members` map for server-side rule enforcement. This avoids complex `list` queries across all `darkStores` based on a user's membership and instead leverages explicit user-store associations.\n*   **DarkStore-Specific Data (`/darkStores/{darkStoreId}/...`):** For any subcollection data (e.g., `inventory`, `salesRecords`), queries are naturally scoped by `darkStoreId`. The denormalized `members` map in each document ensures that a `list` query for `inventory` within a specific `darkStoreId` (e.g., `/darkStores/store123/inventory`) can be secured with a simple rule `allow list: if request.auth.uid in resource.data.members;`. This allows users to only retrieve data for the specific dark stores they are authorized for, preventing accidental data exposure.\n\nThis architecture minimizes rule complexity, maximizes debugging clarity, and provides a scalable foundation for the Neuro-Fast system, enabling real-time operations and AI-driven insights with robust security."
+    "reasoning": "The recommended Firestore structure for Neuro-Fast prioritizes Authorization Independence and Query-Agnostic Rules (QAPs) by systematically applying denormalization and structural segregation. The core principle is that security rules should be simple, explicit, and avoid cross-document `get()` operations, especially across collection boundaries.\n\n**Authorization Independence via Denormalization:**\n\n1.  **Top-Level Entities (User, DarkStore, Rider, Product, Vendor, App Roles):**\n    *   `/users/{userId}` documents are privately owned by the `request.auth.uid` corresponding to `userId`. Admin users (identified by presence in `/app_admins/{userId}`) have broader access.\n    *   `/darkStores/{darkStoreId}` documents are the central hub for operations. To ensure Authorization Independence for itself and its extensive subcollections, each `DarkStore` document will include a `members` map (e.g., `members: { uid1: 'manager', uid2: 'rider_admin', ... }`). This map explicitly defines roles for all users interacting with *this specific dark store*.\n    *   `/riders/{riderId}` documents (where `riderId` is the `User.id` for the rider) are self-owned (`userId == request.auth.uid`). To allow `DarkStore` managers to list and manage riders without `get()` calls, each `Rider` document will also contain a `darkStoreMemberships` map (e.g., `darkStoreMemberships: { darkStoreId1: { role: 'associated_rider', managerId: 'darkStoreManagerUid1' }, ...}`). This denormalizes the `managerId` of each associated `DarkStore` directly into the `Rider` document. This allows rules to check `request.auth.uid` against the `managerId` within this map, making `list` operations secure and performant.\n\n2.  **Hierarchical Entities (DarkStore Subcollections):**\n    *   All subcollections under `/darkStores/{darkStoreId}/...` (e.g., `inventoryItems`, `salesRecords`, `procurementOrders`, `alerts`) will inherit and explicitly denormalize the `members` map from their parent `DarkStore` document into each of their own documents (e.g., `InventoryItem.darkStoreMembers`, `Alert.darkStoreMembers`).\n    *   This ensures that any security rule for documents within these subcollections can directly evaluate `resource.data.darkStoreMembers[request.auth.uid]` without needing to perform a `get()` call to the parent `DarkStore` document. This is critical for maintaining transactional integrity and simplifying debugging.\n    *   For `ProcurementOrderItem`, it will inherit the `darkStoreMembers` from its grandparent `DarkStore`.\n\n**QAPs (Query-Agnostic Rules) Support:**\n\n*   **Structural Segregation:** Collections like `/products` and `/vendors` are global read-only for most users, simplifying their security posture. `/app_admins` uses existence checks for quick role verification.\n*   **Path-Based Ownership:** `/users/{userId}` ensures `request.auth.uid` matches `userId` for self-access, which is inherently QAP-compliant.\n*   **Denormalized Membership for `DarkStore` and Subcollections:** The `members` map in `DarkStore` documents and the denormalized `darkStoreMembers` map in subcollection documents allow `list` queries to be secured. A client application would typically query for documents within a specific `darkStoreId` (e.g., `/darkStores/london_north/inventoryItems`). The security rule can then directly check the `darkStoreMembers` field of the `InventoryItem` document for `request.auth.uid`'s role, ensuring that only authorized users can list the data without needing to filter on the server side (which is not how rules work).\n*   **Denormalized `darkStoreMemberships` for `Riders`:** For a manager to list riders, they can query `/riders` with a `where` clause on `associatedDarkStoreIds` containing one of their managed `DarkStore` IDs. The rule can then check if `request.auth.uid` is present in the `darkStoreMemberships` map as a manager for any of the rider's associated dark stores. This ensures that the client's query, combined with the denormalized data, allows secure and efficient `list` operations without violating QAP principles."
   }
 }

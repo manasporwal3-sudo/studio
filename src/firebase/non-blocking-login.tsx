@@ -1,35 +1,29 @@
 'use client';
 import {
-  Auth,
+  Auth, // Import Auth type for type hinting
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  UserCredential,
+  // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
-/** 
- * Initiate anonymous sign-in (non-blocking). 
- * Returns the promise so the caller can attach a .catch() if desired.
- */
-export function initiateAnonymousSignIn(authInstance: Auth): Promise<UserCredential> {
+/** Initiate anonymous sign-in (non-blocking). */
+export function initiateAnonymousSignIn(authInstance: Auth): void {
   // CRITICAL: Call signInAnonymously directly. Do NOT use 'await signInAnonymously(...)'.
-  return signInAnonymously(authInstance);
+  signInAnonymously(authInstance);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** 
- * Initiate email/password sign-up (non-blocking). 
- * Returns the promise so the caller can attach a .catch() if desired.
- */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
+/** Initiate email/password sign-up (non-blocking). */
+export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
   // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
-  return createUserWithEmailAndPassword(authInstance, email, password);
+  createUserWithEmailAndPassword(authInstance, email, password);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** 
- * Initiate email/password sign-in (non-blocking). 
- * Returns the promise so the caller can attach a .catch() if desired.
- */
-export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
+/** Initiate email/password sign-in (non-blocking). */
+export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
   // CRITICAL: Call signInWithEmailAndPassword directly. Do NOT use 'await signInWithEmailAndPassword(...)'.
-  return signInWithEmailAndPassword(authInstance, email, password);
+  signInWithEmailAndPassword(authInstance, email, password);
+  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }

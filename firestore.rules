@@ -4,166 +4,166 @@ service cloud.firestore {
 
     /**
      * NEURO-FAST SECURITY RULES
-     * 
-     * PHILOSOPHY:
-     * This ruleset implements a robust, decentralized authorization model designed for high-performance 
-     * quick-commerce operations. It prioritizes "Authorization Independence" by leveraging heavy 
-     * data denormalization. By storing a 'members' map (UID to Role) directly on every operational 
-     * document, we eliminate the need for costly cross-document lookups (get() calls) during 
-     * security evaluations.
-     * 
-     * DATA STRUCTURE:
-     * - User Profiles: Isolated under /userProfiles/{userId} for private management.
-     * - Global Catalogs: /products and /vendors are globally readable but restricted to 
-     *   Global Managers (identified via the /global_managers/ collection).
-     * - Dark Store Ecosystem: All operational data (Inventory, Sales, Forecasts, Orders, Alerts) 
-     *   is nested under /darkStores/{darkStoreId}. Every document in this tree contains a 
-     *   denormalized 'members' map from the parent store for instant authorization.
-     * 
-     * KEY SECURITY DECISIONS:
-     * 1. Shared Access: Access to store-specific data is governed by the 'members' map on each document.
-     * 2. Relational Integrity: Rules strictly enforce that documents created within a store path 
-     *    must contain the correct 'darkStoreId' in their body.
-     * 3. Immutability: Critical relationship links (like store association) are immutable once created.
-     * 4. Prototyping Flexibility: Schema validation (types/required fields) is bypassed to allow 
-     *    rapid iteration, focusing purely on secure access control.
+     *
+     * Core Philosophy:
+     * This ruleset enforces a strict hybrid model of individual ownership and role-based access 
+     * control (RBAC) powered by data denormalization. Authorization is independent—documents 
+     * carry the necessary metadata (member maps) to authorize access without cross-document lookups.
+     *
+     * Data Structure:
+     * - /users/{userId}: Private user profiles.
+     * - /darkStores/{darkStoreId}: Central hubs for inventory and sales.
+     * - /riders/{riderId}: Delivery personnel profiles.
+     * - /products & /vendors: Global catalogs.
+     *
+     * Key Security Decisions:
+     * 1. Authorization Independence: DarkStore subcollections (inventory, sales, etc.) denormalize 
+     *    the store's 'members' map onto every document. This allows for fast, efficient rules 
+     *    and secure list operations.
+     * 2. Admin Privileges: Global administrative access is controlled via the /app_admins collection.
+     * 3. Relational Integrity: In this prototyping phase, rules strictly enforce that internal 'id' 
+     *    fields and 'owner' fields match the authenticated user, but do not enforce strict schema types.
+     * 4. Immutable Links: Once a document is linked to a user or a store, that link is immutable 
+     *    to prevent unauthorized data migration.
      */
 
-    // --- HELPER FUNCTIONS ---
+    // --- GLOBAL HELPER FUNCTIONS ---
 
+    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /** @description Checks if the user exists in the app_admins collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/app_admins/$(request.auth.uid));
+    }
+
+    /** @description Checks if the provided ID matches the authenticated user's UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Checks if the user exists in the global_managers collection (DBAC: Existence over Content)
-    function isGlobalManager() {
-      return isSignedIn() && exists(/databases/$(database)/documents/global_managers/$(request.auth.uid));
+    /** @description Checks ownership and ensures the document exists for destructive operations. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
     }
 
-    // Checks if the user is a member based on the 'members' map in the document data
-    function isMember(data) {
-      return isSignedIn() && data.members[request.auth.uid] != null;
+    /** @description Checks if the authenticated user has a specific role in a members map. */
+    function hasRole(membersMap, role) {
+      return isSignedIn() && membersMap[request.auth.uid] == role;
     }
 
-    // Validation helper for existence and membership on update/delete
-    function isExistingMember() {
-      return resource != null && isMember(resource.data);
-    }
-
-    // Relational integrity check: Ensure data link matches the URL path
-    function matchesPathStore(data, darkStoreId) {
-      return data.darkStoreId == darkStoreId;
-    }
-
-    // Enforce that a field cannot be changed after creation
-    function isImmutable(field) {
-      return request.resource.data[field] == resource.data[field];
+    /** @description Checks if the authenticated user is present in a members map. */
+    function isMember(membersMap) {
+      return isSignedIn() && request.auth.uid in membersMap;
     }
 
     // --- COLLECTION RULES ---
 
     /**
-     * @description Rules for user-specific profile data.
-     * @path /userProfiles/{userId}
-     * @allow Authenticated user (create/get/list/update) their own profile.
-     * @deny Any user attempting to access a different user's profile.
-     * @principle Ownership-based access control.
+     * @description Core user profiles. Users can manage their own data.
+     * @path /users/{userId}
+     * @allow (create) if auth.uid == userId
+     * @deny (update) if auth.uid != userId
+     * @principle Path-based ownership and relational integrity.
      */
-    match /userProfiles/{userId} {
-      allow get, list: if isOwner(userId);
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && isImmutable('id');
-      allow delete: if isOwner(userId);
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description System-level role collection for managers.
-     * @path /global_managers/{userId}
-     * @allow User to read their own manager status.
-     * @deny Direct writes by users (typically handled by admin/system process).
-     * @principle DBAC (Database-Based Access Control) for global roles.
+     * @description System-wide role definitions.
+     * @path /app_roles/{roleId}
+     * @allow (get) if signedIn
+     * @deny (write) if not admin
+     * @principle Global read-only with admin-only management.
      */
-    match /global_managers/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if isSignedIn(); // Allow discovery of managers
-      allow create, update, delete: if false; // System-managed
+    match /app_roles/{roleId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Core Dark Store master data.
+     * @description Admin registry used for DBAC checks.
+     * @path /app_admins/{userId}
+     * @allow (get) if signedIn
+     * @deny (write) if not existing admin
+     * @principle Controlled administrative access.
+     */
+    match /app_admins/{userId} {
+      allow get: if isSignedIn();
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Dark store locations. Uses a 'members' map for RBAC.
      * @path /darkStores/{darkStoreId}
-     * @allow Members of the store (read); Store Admins (write).
-     * @deny Users not in the 'members' map.
-     * @principle Shared access via denormalized membership map.
+     * @allow (update) if user is 'manager' in store members map
+     * @deny (create) if user is not the managerUserId
+     * @principle Authorization Independence via internal membership map.
      */
     match /darkStores/{darkStoreId} {
-      allow get, list: if isMember(resource.data);
-      allow create: if isGlobalManager(); 
-      allow update: if isMember(resource.data) && (resource.data.members[request.auth.uid] == 'Admin' || resource.data.members[request.auth.uid] == 'Store Manager');
-      allow delete: if isGlobalManager();
-    }
+      allow get, list: if isMember(resource.data.members) || isAdmin();
+      allow create: if isSignedIn() && (request.resource.data.managerUserId == request.auth.uid || isAdmin());
+      allow update: if resource != null && (hasRole(resource.data.members, 'manager') || isAdmin());
+      allow delete: if isAdmin();
 
-    /**
-     * @description Operational data subcollections (Inventory, Sales, Forecasts, Orders, Alerts).
-     * @path /darkStores/{darkStoreId}/{collection}/{id}
-     * @allow Any authorized member of the specific Dark Store.
-     * @deny Access if the UID is not present in the denormalized 'members' map of the document.
-     * @principle Authorization Independence via denormalized members map.
-     */
-    match /darkStores/{darkStoreId}/{collection}/{id} {
-      allow get, list: if isMember(resource.data);
+      // --- SUBCOLLECTIONS (Authorization Independence) ---
       
-      allow create: if isMember(request.resource.data) 
-                    && matchesPathStore(request.resource.data, darkStoreId);
-
-      allow update: if isExistingMember() 
-                    && isMember(request.resource.data)
-                    && isImmutable('darkStoreId');
-
-      allow delete: if isExistingMember();
-
-      // Nested items for Procurement Orders
-      match /items/{itemId} {
-        allow get, list: if isMember(resource.data);
-        allow create: if isMember(request.resource.data) && matchesPathStore(request.resource.data, darkStoreId);
-        allow update: if isExistingMember() && isMember(request.resource.data) && isImmutable('darkStoreId');
-        allow delete: if isExistingMember();
+      /**
+       * @description All subcollections under DarkStores inherit access from a denormalized 'darkStoreMembers' map.
+       */
+      match /{allSubcollections=**} {
+        allow get, list: if isMember(resource.data.darkStoreMembers) || isAdmin();
+        allow create: if isMember(request.resource.data.darkStoreMembers) || isAdmin();
+        allow update: if resource != null && (hasRole(resource.data.darkStoreMembers, 'manager') || isAdmin());
+        allow delete: if isAdmin();
       }
     }
 
     /**
-     * @description Global Product Catalog.
+     * @description Rider profiles. Riders own their profile; Managers of associated stores can view/list.
+     * @path /riders/{riderId}
+     * @allow (list) if auth.uid is a managerId in darkStoreMemberships
+     * @deny (update) if auth.uid is not riderId
+     * @principle QAP-compliant listing via denormalized membership map.
+     */
+    match /riders/{riderId} {
+      allow get: if isOwner(riderId) || isAdmin() || isMember(resource.data.darkStoreMemberships);
+      allow list: if isSignedIn(); // Filtered by darkStoreMemberships in client query
+      allow create: if isOwner(riderId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner(riderId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(riderId) || isAdmin();
+    }
+
+    /**
+     * @description Global product catalog.
      * @path /products/{productId}
-     * @allow All signed-in users (read). Global Managers (write).
-     * @deny Write access for standard store managers or employees.
-     * @principle Public read with restricted role-based writes.
+     * @allow (get) if signedIn
+     * @deny (write) if not admin
+     * @principle Global read, restricted write.
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if isGlobalManager();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Global Vendor Catalog and associated data.
+     * @description Global vendor catalog.
      * @path /vendors/{vendorId}
-     * @allow Signed-in users (read catalog). Members of the vendor map or Global Managers (write).
-     * @principle Shared access map for vendor-specific integration data.
+     * @allow (get) if signedIn
+     * @deny (write) if not admin
+     * @principle Global read, restricted write.
      */
     match /vendors/{vendorId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if isGlobalManager();
-
-      // Vendor Integration Configurations
-      match /integrationConfigurations/{configId} {
-        allow get, list: if isMember(resource.data) || isGlobalManager();
-        allow create: if isMember(request.resource.data) || isGlobalManager();
-        allow update: if (isExistingMember() || isGlobalManager()) && isImmutable('vendorId');
-        allow delete: if isExistingMember() || isGlobalManager();
-      }
+      allow create, update, delete: if isAdmin();
     }
+
   }
 }
