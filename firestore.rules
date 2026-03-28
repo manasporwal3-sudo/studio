@@ -3,9 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN SECURITY RULES — v14.0 APEX
-     * Implements absolute God-Mode for master identities and siloed subcollections.
-     * v14.0 adds explicit support for collectionGroup queries for the master identity.
+     * NEURO·FAST SOVEREIGN — v14.0 APEX SECURITY PROTOCOL
+     * Implements absolute recursive God-Mode for master administrative identities.
+     * v14.0 adds explicit list authorization for the global user registry.
      */
 
     // --- GLOBAL HELPERS ---
@@ -28,17 +28,12 @@ service cloud.firestore {
       allow read, write: if isMasterAdmin();
     }
 
-    // --- COLLECTION GROUP SUPPORT ---
-    // Explicitly allow collectionGroup queries for administrative oversight.
-    match /{path=**}/inventory/{itemId} {
-      allow read: if isMasterAdmin();
-    }
-    
-    match /{path=**}/platform_activity/{logId} {
-      allow read: if isMasterAdmin();
-    }
+    // --- CORE COLLECTION RULES ---
 
-    // --- USER & NODE OPERATOR RULES ---
+    match /users {
+      // Explicitly allow listing the users collection for administrative oversight.
+      allow list: if isMasterAdmin();
+    }
 
     match /users/{userId} {
       // Allow operators to manage their own node profiles.
@@ -55,22 +50,19 @@ service cloud.firestore {
     // --- FLEET & LOGISTICS ---
 
     match /riders/{riderId} {
-      // Global read for authorized operators; writes restricted to node owners.
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if resource != null && resource.data.darkStoreId == request.auth.uid;
+      allow update, delete: if resource != null && (resource.data.darkStoreId == request.auth.uid || isMasterAdmin());
     }
 
     // --- PLATFORM TELEMETRY ---
 
     match /platform_activity/{logId} {
-      // Master admin has access via the supreme bypass and group rules above.
-      // Other nodes can only submit logs.
       allow create: if isSignedIn();
+      allow read: if isMasterAdmin();
     }
     
     match /app_admins/{userId} {
-      // Protected registry.
       allow read, write: if isMasterAdmin();
     }
   }

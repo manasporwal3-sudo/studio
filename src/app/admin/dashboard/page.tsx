@@ -42,10 +42,13 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { toast } = useToast();
 
+  const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
+
   const storesQuery = useMemoFirebase(() => {
-    if (!user || userProfile?.role !== 'admin') return null; 
+    // Only fire query if user is identified and has admin privileges
+    if (!user || !isMasterAdmin) return null; 
     return query(collection(db, 'users'), where('role', '==', 'store'));
-  }, [db, user, userProfile?.role]);
+  }, [db, user, isMasterAdmin]);
 
   const { data: allStores, error, isLoading: isStoresLoading } = useCollection(storesQuery);
 
@@ -79,7 +82,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (isUserLoading || (user && !userProfile && isStoresLoading)) {
+  if (isUserLoading || (user && isStoresLoading && !allStores)) {
     return (
       <DashboardLayout>
         <div className="h-full min-h-[60vh] flex items-center justify-center">
@@ -92,7 +95,7 @@ export default function AdminDashboard() {
   }
 
   // Final guard: Ensure only admins see the dashboard content
-  if (user && userProfile?.role !== 'admin') {
+  if (user && !isMasterAdmin) {
     return (
       <DashboardLayout>
         <div className="h-full min-h-[60vh] flex flex-col items-center justify-center text-destructive">
