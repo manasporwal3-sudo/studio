@@ -28,7 +28,7 @@ export function ActiveStoresGrid() {
 
   const isOnline = (lastActive: any) => {
     if (!lastActive) return false;
-    const date = lastActive.toDate();
+    const date = typeof lastActive.toDate === 'function' ? lastActive.toDate() : new Date(lastActive);
     const now = new Date();
     return (now.getTime() - date.getTime()) < 120000; // 2 minutes
   };
@@ -43,7 +43,7 @@ export function ActiveStoresGrid() {
         <div className="flex items-center gap-3">
           <Activity className="w-4 h-4 text-primary" />
           <CardTitle className="text-xs font-headline tracking-widest text-white uppercase">
-            Active Node Telemetry
+            Active Node Matrix Telemetry
           </CardTitle>
         </div>
         <div className="flex items-center gap-2">
@@ -55,9 +55,9 @@ export function ActiveStoresGrid() {
         <Table>
           <TableHeader>
             <TableRow className="bg-white/5 border-white/5 hover:bg-transparent">
-              <TableHead className="text-[10px] uppercase font-mono tracking-widest py-6">Store Identifier</TableHead>
+              <TableHead className="text-[10px] uppercase font-mono tracking-widest py-6">Node Identifier</TableHead>
               <TableHead className="text-[10px] uppercase font-mono tracking-widest">Network Status</TableHead>
-              <TableHead className="text-[10px] uppercase font-mono tracking-widest">Last Activity</TableHead>
+              <TableHead className="text-[10px] uppercase font-mono tracking-widest">Last Heartbeat</TableHead>
               <TableHead className="text-[10px] uppercase font-mono tracking-widest text-right">Protocol</TableHead>
             </TableRow>
           </TableHeader>
@@ -76,7 +76,7 @@ export function ActiveStoresGrid() {
                   >
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-bold text-sm text-white">{store.storeName || 'Unnamed Hub'}</span>
+                        <span className="font-bold text-sm text-white">{store.storeName || 'UNNAMED HUB'}</span>
                         <div className="flex items-center gap-2 text-[9px] font-mono text-muted-foreground uppercase">
                           <Mail className="w-2.5 h-2.5" />
                           {store.email}
@@ -90,7 +90,7 @@ export function ActiveStoresGrid() {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                           </div>
-                          <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest">ONLINE</span>
+                          <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest glow-text-primary">ONLINE</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 opacity-50">
@@ -101,8 +101,8 @@ export function ActiveStoresGrid() {
                     </TableCell>
                     <TableCell className="font-mono text-[10px] text-muted-foreground">
                       {store.lastActive 
-                        ? formatDistanceToNow(store.lastActive.toDate(), { addSuffix: true }).toUpperCase()
-                        : 'NEVER SYNCED'}
+                        ? formatDistanceToNow(typeof store.lastActive.toDate === 'function' ? store.lastActive.toDate() : new Date(store.lastActive), { addSuffix: true }).toUpperCase()
+                        : 'NO TELEMETRY'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
@@ -122,7 +122,7 @@ export function ActiveStoresGrid() {
             {!isLoading && stores?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} className="p-20 text-center">
-                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">No active nodes detected in the neural mesh.</p>
+                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Awaiting node authentication signals...</p>
                 </TableCell>
               </TableRow>
             )}
