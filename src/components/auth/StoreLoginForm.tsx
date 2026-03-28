@@ -37,7 +37,18 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
         toast({ title: "Security Protocol Locked", description: validation.message, variant: "destructive" });
       }
     } catch (error: any) {
-      toast({ title: "Uplink Terminated", description: "Invalid credentials. Ensure node enrollment is complete.", variant: "destructive" });
+      console.error("Login Error:", error);
+      let errorMsg = "Invalid Hub Credentials.";
+      
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        errorMsg = "Identity not detected in the mesh. Ensure node enrollment is complete at /signup.";
+      }
+      
+      toast({ 
+        title: "Uplink Terminated", 
+        description: errorMsg, 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +98,12 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "INITIATE HUB UPLINK"}
         </Button>
       </form>
+
+      <div className="pt-4 text-center">
+        <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+          New Operator? <a href="/signup" className="text-primary hover:underline">Enroll Now</a>
+        </p>
+      </div>
     </div>
   );
 }

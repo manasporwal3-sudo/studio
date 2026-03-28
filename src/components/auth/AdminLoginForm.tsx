@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +7,7 @@ import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { validateAndRoute } from '@/services/auth-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, User, Key, Loader2, ArrowLeft, Terminal, Activity } from 'lucide-react';
+import { Shield, User, Key, Loader2, ArrowLeft, Terminal, Activity, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { recordStoreActivity } from '@/firebase/non-blocking-updates';
@@ -39,13 +40,18 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
       console.error("Login Error:", error);
       let errorMsg = "Invalid Administrative Credentials.";
       
-      if (error.code === 'auth/user-not-found') {
-        errorMsg = "Identity not detected in the mesh. Please sign up first.";
+      // Handle the unified v10+ error code
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        errorMsg = "Identity not detected or key mismatch. Ensure you have initiated node enrollment at /signup first.";
       } else if (error.code === 'auth/wrong-password') {
         errorMsg = "Neural Key mismatch. Integrity check failed.";
       }
       
-      toast({ title: "Access Denied", description: errorMsg, variant: "destructive" });
+      toast({ 
+        title: "Access Denied", 
+        description: errorMsg, 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +79,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
           <Input
             type="email"
-            placeholder="ADMIN ID (admin@neurofast.io)"
+            placeholder="ADMIN ID (e.g. admin@neurofast.io)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-xs focus:border-destructive/50"
@@ -99,6 +105,12 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ESTABLISH COMMAND UPLINK"}
         </Button>
       </form>
+
+      <div className="pt-4 text-center">
+        <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+          New Node? <a href="/signup" className="text-primary hover:underline">Initiate Enrollment</a>
+        </p>
+      </div>
     </div>
   );
 }
