@@ -21,7 +21,6 @@ import {
   Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { STORES } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -81,7 +80,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
-  const activeStoreId = searchParams.get('store') || STORES[0].id;
+  const activeStoreId = searchParams.get('store') || 'PRIMARY-NODE';
   const role = userProfile?.roleIds?.[0] || 'darkstore';
 
   useEffect(() => {

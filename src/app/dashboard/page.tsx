@@ -42,35 +42,39 @@ const HealthArc = ({ value, label }: { value: number, label: string }) => {
 export default function CommandCenter() {
   const [mounted, setMounted] = useState(false);
   // Initialize with fixed values for hydration stability
-  const [healthData, setHealthData] = useState(STORES.map(s => ({ ...s, health: 90 })));
+  const [healthData, setHealthData] = useState<any[]>([]);
   const [actions, setActions] = useState<{ id: number, msg: string, time: number, type: string }[]>([]);
 
   useEffect(() => {
     setMounted(true);
-    // Randomize health data after mount
-    setHealthData(STORES.map(s => ({ ...s, health: 85 + Math.random() * 10 })));
+    
+    if (STORES.length > 0) {
+      setHealthData(STORES.map(s => ({ ...s, health: 85 + Math.random() * 10 })));
 
-    const interval = setInterval(() => {
-      setHealthData(prev => prev.map(s => ({
-        ...s,
-        health: Math.max(20, Math.min(100, s.health + (Math.random() - 0.5) * 5))
-      })));
-    }, 3000);
+      const interval = setInterval(() => {
+        setHealthData(prev => prev.map(s => ({
+          ...s,
+          health: Math.max(20, Math.min(100, s.health + (Math.random() - 0.5) * 5))
+        })));
+      }, 3000);
 
-    const actionInterval = setInterval(() => {
-      const newAction = {
-        id: Date.now(),
-        msg: `SOVEREIGN AUTO-HEAL: Threshold met for Node ${STORES[Math.floor(Math.random() * STORES.length)].id}. Restoring stock parity.`,
-        time: 7,
-        type: Math.random() > 0.5 ? 'CRITICAL' : 'OPTIMIZATION'
+      const actionInterval = setInterval(() => {
+        if (STORES.length === 0) return;
+        const targetStore = STORES[Math.floor(Math.random() * STORES.length)];
+        const newAction = {
+          id: Date.now(),
+          msg: `SOVEREIGN AUTO-HEAL: Threshold met for Node ${targetStore.id}. Restoring stock parity.`,
+          time: 7,
+          type: Math.random() > 0.5 ? 'CRITICAL' : 'OPTIMIZATION'
+        };
+        setActions(prev => [newAction, ...prev].slice(0, 4));
+      }, 7000);
+
+      return () => {
+        clearInterval(interval);
+        clearInterval(actionInterval);
       };
-      setActions(prev => [newAction, ...prev].slice(0, 4));
-    }, 7000);
-
-    return () => {
-      clearInterval(interval);
-      clearInterval(actionInterval);
-    };
+    }
   }, []);
 
   return (
@@ -91,6 +95,11 @@ export default function CommandCenter() {
             {healthData.map((store) => (
               <HealthArc key={store.id} value={Math.round(store.health)} label={store.name} />
             ))}
+            {healthData.length === 0 && mounted && (
+              <div className="col-span-full py-12 text-center border-2 border-dashed border-white/5 opacity-40">
+                <p className="font-mono text-[10px] uppercase tracking-[0.5em]">No Nodes Detected in Health Matrix</p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -157,7 +166,7 @@ export default function CommandCenter() {
                   </div>
                 </div>
               ))}
-              {healthData.every(s => s.health >= 90) && (
+              {(healthData.length === 0 || healthData.every(s => s.health >= 90)) && mounted && (
                 <div className="text-center py-8 md:py-10">
                   <div className="text-secondary font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest mb-2">Neural Parity Achieved</div>
                   <div className="text-[8px] md:text-[9px] text-muted-foreground font-mono uppercase">System Optimal</div>
