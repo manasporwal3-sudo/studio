@@ -11,6 +11,8 @@ export interface AppUser {
   role: UserRole;
   storeId?: string; // Present if role is 'store'
   displayName: string;
+  storeName?: string;
+  lastActive?: any; // Firestore Timestamp
   createdAt: string;
   updatedAt: string;
 }

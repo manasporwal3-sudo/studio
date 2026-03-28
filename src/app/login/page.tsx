@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { recordStoreActivity } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [mounted, setMounted] = useState(false);
   const auth = useAuth();
+  const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
@@ -22,9 +24,10 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
     if (user) {
-      router.push('/inventory');
+      recordStoreActivity(db, user.uid);
+      router.push('/');
     }
-  }, [user, router]);
+  }, [user, router, db]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

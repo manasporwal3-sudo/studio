@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
 import { doc, collection } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, recordStoreActivity } from '@/firebase/non-blocking-updates';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,7 @@ function InventoryContent() {
       lastUpdated: new Date().toISOString()
     });
     
+    recordStoreActivity(db, user.uid);
     setIsAddModalOpen(false);
     setNewItem({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' });
     toast({ title: "SKU Synchronized", description: "Node mesh updated with new data vector." });
@@ -58,6 +59,7 @@ function InventoryContent() {
       lastUpdated: new Date().toISOString()
     });
     
+    recordStoreActivity(db, user.uid);
     setEditingItem(null);
     toast({ title: "SKU Re-calibrated", description: "Telemetry updated in the local hub." });
   };
@@ -66,6 +68,7 @@ function InventoryContent() {
     if (!user?.uid) return;
     const docRef = doc(db, 'users', user.uid, 'inventory', id);
     deleteDocumentNonBlocking(docRef);
+    recordStoreActivity(db, user.uid);
     toast({ title: "SKU Terminated", description: "Item removed from the neural matrix." });
   };
 
@@ -85,6 +88,7 @@ function InventoryContent() {
         currentStock: target.currentStock - 1,
         lastUpdated: new Date().toISOString()
       });
+      recordStoreActivity(db, user.uid);
       toast({ title: "Order Simulated", description: `Reduced stock for ${target.name}.` });
     } else {
       toast({ title: "Out of Stock", description: `${target.name} cannot fulfill the simulation.`, variant: "destructive" });
