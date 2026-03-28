@@ -1,9 +1,9 @@
+
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 import { 
   Brain, 
   Database, 
@@ -13,9 +13,13 @@ import {
   User as UserIcon, 
   LogOut,
   ChevronRight,
-  Menu
+  Menu,
+  Zap,
+  MapPin,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { STORES } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -24,6 +28,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [activeStore, setActiveStore] = useState(STORES[0]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -32,11 +37,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }, [user, isUserLoading, router]);
 
   const navItems = [
-    { name: 'Inventory Sync', icon: <Database className="w-4 h-4" />, href: '/inventory' },
-    { name: 'Velocity Trends', icon: <TrendingUp className="w-4 h-4" />, href: '/trends' },
-    { name: 'Restock Agent', icon: <ShoppingCart className="w-4 h-4" />, href: '/restock' },
-    { name: 'AI Intelligence', icon: <Sparkles className="w-4 h-4" />, href: '/insights' },
-    { name: 'My Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
+    { name: 'Live Control', icon: <Zap className="w-4 h-4" />, href: '/dashboard' },
+    { name: 'Inventory Brain', icon: <Database className="w-4 h-4" />, href: '/inventory' },
+    { name: 'Demand Oracle', icon: <TrendingUp className="w-4 h-4" />, href: '/trends' },
+    { name: 'Profit Engine', icon: <DollarSign className="w-4 h-4" />, href: '/profit' },
+    { name: 'AI Agent', icon: <Brain className="w-4 h-4" />, href: '/restock' },
+    { name: 'Neural Insights', icon: <Sparkles className="w-4 h-4" />, href: '/insights' },
+    { name: 'Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
 
   if (isUserLoading || !user) {
@@ -58,7 +65,29 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <span className="font-bold tracking-tighter text-sm">NEURO-FAST</span>
         </div>
 
+        <div className="px-4 mb-6">
+          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 px-2 tracking-widest">Active Nodes</p>
+          <div className="space-y-1">
+            {STORES.map(store => (
+              <button
+                key={store.id}
+                onClick={() => setActiveStore(store)}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                  activeStore.id === store.id 
+                    ? "bg-primary/20 text-primary border border-primary/20" 
+                    : "text-muted-foreground hover:bg-white/5"
+                )}
+              >
+                <MapPin className="w-3 h-3" />
+                {store.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <nav className="flex-1 px-4 space-y-1">
+           <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 px-2 tracking-widest">Control Panels</p>
           {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <div className={cn(
@@ -76,18 +105,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-black/20 border border-white/5">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
-              {user.email?.[0].toUpperCase() || 'A'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold truncate uppercase">{user.email?.split('@')[0] || 'Agent'}</p>
-              <p className="text-[8px] text-muted-foreground uppercase tracking-widest">Active Link</p>
-            </div>
-          </div>
           <Button 
             variant="ghost" 
-            className="w-full mt-4 text-[10px] uppercase font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            className="w-full text-[10px] uppercase font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
             onClick={() => auth.signOut()}
           >
             <LogOut className="w-3 h-3 mr-2" /> Disconnect Node
@@ -100,22 +120,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <header className="h-16 border-b border-white/5 flex items-center px-8 justify-between glass-panel sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <Menu className="w-5 h-5 md:hidden text-muted-foreground" />
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">{activeStore.id}</span>
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                {activeStore.name} // {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+              </h2>
+            </div>
           </div>
           <div className="flex items-center gap-6">
-            <div className="hidden lg:flex flex-col items-end">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Node Latency</span>
+             <div className="flex flex-col items-end">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Global Pulse</span>
               <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> 14MS
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> 100% OPERATIONAL
               </span>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8 max-w-[1400px] mx-auto w-full">
-          {children}
+        <main className="flex-1 p-6 md:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden">
+          {React.cloneElement(children as React.ReactElement, { storeId: activeStore.id })}
         </main>
       </div>
     </div>

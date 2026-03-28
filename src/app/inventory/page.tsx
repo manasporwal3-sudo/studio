@@ -1,35 +1,86 @@
+
 'use client';
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { InventoryTable } from "@/components/dashboard/inventory-table";
-import { Database, Globe } from "lucide-react";
+import { useDarkStoreOS } from "@/hooks/use-darkstore-os";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { Database, Clock, RefreshCw } from "lucide-react";
 
-export default function InventoryPage() {
+export default function InventoryPage({ storeId = 'BLR-01' }: { storeId?: string }) {
+  const { inventory } = useDarkStoreOS(storeId);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MetricCard title="Inventory Sync" value="100%" icon={<Database className="w-4 h-4" />} trend="+0.4%" />
-          <MetricCard title="Active SKUs" value="1,240" icon={<Database className="w-4 h-4" />} trend="+12" />
-          <MetricCard title="Global Node" value="LON-042" icon={<Globe className="w-4 h-4" />} trend="Stable" />
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold font-headline tracking-tighter uppercase italic">Inventory Brain</h1>
+            <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] font-bold">Real-time SKU Matrix</p>
+          </div>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 p-2 gap-2">
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              AUTO-SYNC: ON
+            </Badge>
+          </div>
         </div>
-        <InventoryTable />
+
+        <Card className="glass-panel border-none">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">SKU / Item</TableHead>
+                  <TableHead className="text-muted-foreground">Category</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Runway Timer</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Current Stock</TableHead>
+                  <TableHead className="text-muted-foreground">Node Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inventory.map((item) => (
+                  <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className="text-base">{item.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{item.id}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs uppercase tracking-widest text-muted-foreground font-bold">{item.category}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <div className="flex items-center justify-end gap-2 text-xs font-mono">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          {Math.floor(item.currentStock / 1.5)}m
+                       </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-lg font-bold">
+                      {Math.floor(item.currentStock)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline"
+                        className={cn(
+                          "capitalize border-none px-3 py-1",
+                          item.status === 'critical' ? "bg-rose-500/20 text-rose-500" :
+                          item.status === 'low' ? "bg-amber-500/20 text-amber-500" :
+                          "bg-emerald-500/20 text-emerald-400"
+                        )}
+                      >
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
-  );
-}
-
-function MetricCard({ title, value, icon, trend }: { title: string, value: string, icon: React.ReactNode, trend: string }) {
-  return (
-    <div className="p-4 glass-panel border-none rounded-2xl flex flex-col gap-1 group hover:border-primary/20 transition-all">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{title}</span>
-        <div className="text-primary/40 group-hover:text-primary transition-colors">{icon}</div>
-      </div>
-      <div className="flex items-baseline gap-2 mt-2">
-        <span className="text-2xl font-bold font-mono">{value}</span>
-        <span className="text-[10px] font-bold text-emerald-400">{trend}</span>
-      </div>
-    </div>
   );
 }
