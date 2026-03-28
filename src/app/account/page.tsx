@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useUser, useAuth } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Shield, Clock, LogOut } from "lucide-react";
+import { Shield, Clock, LogOut } from "lucide-react";
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -22,36 +22,36 @@ export default function AccountPage() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="glass-panel border-none overflow-hidden">
-          <CardHeader className="bg-primary/10 pb-8">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center text-3xl font-bold shadow-2xl">
+          <CardHeader className="bg-primary/10 pb-6 md:pb-8">
+            <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 text-center sm:text-left">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-primary flex items-center justify-center text-2xl md:text-3xl font-bold shadow-2xl">
                 {user?.email?.[0].toUpperCase() || 'A'}
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-3xl font-bold font-headline tracking-tighter uppercase italic">
+                <CardTitle className="text-2xl md:text-3xl font-bold font-headline tracking-tighter uppercase italic">
                   {user?.email?.split('@')[0] || 'Neural Agent'}
                 </CardTitle>
-                <CardDescription className="text-xs uppercase tracking-widest font-bold text-primary">
+                <CardDescription className="text-[10px] uppercase tracking-widest font-bold text-primary">
                   Authorized Node Operator
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-8 space-y-6">
+          <CardContent className="pt-6 md:pt-8 space-y-6">
             <div className="grid gap-4">
               <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                <Shield className="w-5 h-5 text-primary" />
-                <div className="flex-1">
+                <Shield className="w-5 h-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Identity Protocol</p>
-                  <p className="text-sm font-mono">{user?.email}</p>
+                  <p className="text-xs font-mono truncate">{user?.email}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                <Clock className="w-5 h-5 text-primary" />
-                <div className="flex-1">
+                <Clock className="w-5 h-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Last Synchronization</p>
-                  <p className="text-sm font-mono">
+                  <p className="text-xs font-mono">
                     {mounted ? currentTime : 'Syncing...'}
                   </p>
                 </div>
@@ -60,7 +60,7 @@ export default function AccountPage() {
 
             <Button 
               variant="destructive" 
-              className="w-full h-12 font-bold uppercase tracking-widest"
+              className="w-full h-12 font-bold uppercase tracking-widest text-[10px] md:text-xs"
               onClick={() => auth.signOut()}
             >
               <LogOut className="w-4 h-4 mr-2" /> Terminate Node Session

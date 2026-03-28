@@ -1,7 +1,6 @@
 'use client';
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Cpu, TrendingUp, ShieldCheck, Activity, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,42 +18,42 @@ const data = [
 export default function PredictiveBrainPage() {
   return (
     <DashboardLayout>
-      <div className="space-y-12">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <div className="w-12 h-12 bg-secondary/20 border border-secondary/40 flex items-center justify-center">
-              <Cpu className="w-6 h-6 text-secondary" />
+      <div className="space-y-8 md:space-y-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/20 border border-secondary/40 flex items-center justify-center shrink-0">
+              <Cpu className="w-5 h-5 md:w-6 md:h-6 text-secondary" />
             </div>
             <div>
-              <h1 className="font-headline text-2xl font-extrabold uppercase tracking-[0.3em]">Predictive Neural Brain</h1>
-              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Model: LSTM-4 // Accuracy: 96.8% // Status: Learning</p>
+              <h1 className="font-headline text-xl md:text-2xl font-extrabold uppercase tracking-[0.2em] md:tracking-[0.3em]">Predictive Brain</h1>
+              <p className="font-mono text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest">Model: LSTM-Apex // Acc: 96.8%</p>
             </div>
           </div>
-          <div className="flex gap-4">
-             <div className="p-3 tactical-panel before:bg-secondary flex items-center gap-3">
-               <ShieldCheck className="w-4 h-4 text-secondary" />
-               <span className="font-mono text-[10px] font-bold uppercase tracking-widest">Guardian Protocol Active</span>
+          <div className="flex gap-4 w-full sm:w-auto">
+             <div className="p-2 md:p-3 tactical-panel before:bg-secondary flex items-center gap-3 w-full sm:w-auto">
+               <ShieldCheck className="w-4 h-4 text-secondary shrink-0" />
+               <span className="font-mono text-[9px] md:text-[10px] font-bold uppercase tracking-widest">Protocol Active</span>
              </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 tactical-panel p-8 before:hidden border border-white/5 bg-black/40 h-[450px]">
-             <div className="flex justify-between items-center mb-8">
-                <h3 className="font-headline font-bold text-sm uppercase tracking-widest">30-Day Financial Trajectory</h3>
+          <div className="lg:col-span-2 tactical-panel p-4 md:p-8 before:hidden border border-white/5 bg-black/40 h-[350px] md:h-[450px]">
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
+                <h3 className="font-headline font-bold text-xs md:text-sm uppercase tracking-widest">30-Day Trajectory</h3>
                 <div className="flex gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="font-mono text-[9px] uppercase text-muted-foreground">Revenue</span>
+                    <span className="font-mono text-[8px] md:text-[9px] uppercase text-muted-foreground">Revenue</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-secondary" />
-                    <span className="font-mono text-[9px] uppercase text-muted-foreground">Net Profit</span>
+                    <span className="font-mono text-[8px] md:text-[9px] uppercase text-muted-foreground">Profit</span>
                   </div>
                 </div>
              </div>
              
-             <div className="h-[300px] w-full">
+             <div className="h-[230px] md:h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data}>
                     <defs>
@@ -68,9 +67,9 @@ export default function PredictiveBrainPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontFamily: 'Share Tech Mono'}} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontFamily: 'Share Tech Mono'}} />
-                    <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0px' }} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 8, fontFamily: 'Share Tech Mono'}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 8, fontFamily: 'Share Tech Mono'}} />
+                    <Tooltip contentStyle={{ backgroundColor: '#000', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0px' }} labelStyle={{ fontSize: '10px' }} itemStyle={{ fontSize: '10px' }} />
                     <Area type="monotone" dataKey="rev" stroke="#14ffec" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
                     <Area type="monotone" dataKey="prof" stroke="#84ff00" fillOpacity={1} fill="url(#colorProf)" strokeWidth={2} />
                   </AreaChart>
@@ -80,20 +79,22 @@ export default function PredictiveBrainPage() {
 
           <div className="space-y-6">
             <h3 className="font-headline font-bold text-[10px] uppercase tracking-[0.3em] text-muted-foreground border-b border-white/5 pb-2">Category Accuracy</h3>
-            <AccuracyGauge label="FMCG / SNACKS" value={93.4} />
-            <AccuracyGauge label="DAIRY / FRESH" value={91.8} />
-            <AccuracyGauge label="BEVERAGES" value={97.2} />
-            <AccuracyGauge label="PANTRY" value={88.5} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+              <AccuracyGauge label="FMCG / SNACKS" value={93.4} />
+              <AccuracyGauge label="DAIRY / FRESH" value={91.8} />
+              <AccuracyGauge label="BEVERAGES" value={97.2} />
+              <AccuracyGauge label="PANTRY" value={88.5} />
+            </div>
           </div>
         </div>
 
         {/* Self-Healing Stream */}
-        <div className="tactical-panel p-8 before:hidden border border-white/5 bg-black/40">
-           <div className="flex items-center gap-4 mb-8">
-             <Terminal className="w-5 h-5 text-primary" />
-             <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Neural Self-Healing Event Log</h3>
+        <div className="tactical-panel p-4 md:p-8 before:hidden border border-white/5 bg-black/40 overflow-x-auto">
+           <div className="flex items-center gap-4 mb-6 md:mb-8">
+             <Terminal className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+             <h3 className="font-headline font-bold text-xs md:text-sm uppercase tracking-widest">Self-Healing Event Log</h3>
            </div>
-           <div className="space-y-4 font-mono text-[10px]">
+           <div className="space-y-4 font-mono text-[9px] md:text-[10px] min-w-[600px]">
               <EventRow time="12:04:22" event="STOCKOUT_PROB_92%_DETECTED" detail="Node: BLR-01 // SKU: SKU-005" status="FIXED" />
               <EventRow time="12:03:15" event="SUPPLIER_WEBHOOK_INITIATED" detail="Vendor: Sunrise Bakeries // Order: Restock-42" status="PENDING" />
               <EventRow time="12:02:48" event="GHOST_STOCK_DISCREPANCY" detail="Node: MUM-02 // Delta: -12 Units" status="ADJUSTED" />
@@ -107,10 +108,10 @@ export default function PredictiveBrainPage() {
 
 function AccuracyGauge({ label, value }: { label: string, value: number }) {
   return (
-    <div className="tactical-panel p-6 before:hidden border border-white/5 group">
+    <div className="tactical-panel p-4 md:p-6 before:hidden border border-white/5 group">
       <div className="flex justify-between items-center mb-4">
-        <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">{label}</span>
-        <span className="font-mono text-sm font-bold text-secondary">{value}%</span>
+        <span className="font-mono text-[8px] md:text-[9px] text-muted-foreground uppercase tracking-widest">{label}</span>
+        <span className="font-mono text-xs md:text-sm font-bold text-secondary">{value}%</span>
       </div>
       <div className="h-1.5 w-full bg-white/5 flex gap-1">
         {Array.from({ length: 20 }).map((_, i) => (
@@ -126,12 +127,12 @@ function AccuracyGauge({ label, value }: { label: string, value: number }) {
 
 function EventRow({ time, event, detail, status }: any) {
   return (
-    <div className="flex gap-8 py-2 border-b border-white/5 last:border-0 group">
-      <span className="text-muted-foreground/40">{time}</span>
-      <span className="font-bold text-primary tracking-widest">{event}</span>
-      <span className="text-muted-foreground flex-1">{detail}</span>
+    <div className="flex gap-6 md:gap-8 py-2 border-b border-white/5 last:border-0 group">
+      <span className="text-muted-foreground/40 whitespace-nowrap">{time}</span>
+      <span className="font-bold text-primary tracking-widest whitespace-nowrap">{event}</span>
+      <span className="text-muted-foreground flex-1 truncate">{detail}</span>
       <span className={cn(
-        "px-2 font-bold",
+        "px-2 font-bold whitespace-nowrap",
         status === 'FIXED' || status === 'OPTIMIZED' ? 'text-secondary' : status === 'ADJUSTED' ? 'text-accent' : 'text-primary'
       )}>[{status}]</span>
     </div>

@@ -15,14 +15,14 @@ const HealthArc = ({ value, label }: { value: number, label: string }) => {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative w-24 h-24">
+      <div className="relative w-20 h-20 md:w-24 md:h-24">
         <svg className="w-full h-full rotate-[-90deg]">
           <circle 
-            cx="48" cy="48" r={radius} 
+            cx="50%" cy="50%" r={radius} 
             className="fill-none stroke-white/5" strokeWidth="6" 
           />
           <circle 
-            cx="48" cy="48" r={radius} 
+            cx="50%" cy="50%" r={radius} 
             className={cn("fill-none transition-all duration-1000 ease-out", color)}
             strokeWidth="6"
             strokeDasharray={circumference}
@@ -31,10 +31,10 @@ const HealthArc = ({ value, label }: { value: number, label: string }) => {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center flex-col">
-          <span className="font-mono text-lg font-bold glow-text-primary">{value}%</span>
+          <span className="font-mono text-sm md:text-lg font-bold glow-text-primary">{value}%</span>
         </div>
       </div>
-      <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="font-mono text-[8px] md:text-[9px] uppercase tracking-widest text-center text-muted-foreground line-clamp-1">{label}</span>
     </div>
   );
 };
@@ -69,19 +69,19 @@ export default function CommandCenter() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-12">
+      <div className="space-y-8 md:space-y-12">
         {/* Hub Health Matrix */}
         <section>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4">
               <Server className="w-5 h-5 text-primary" />
-              <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">Hub Health Matrix</h3>
+              <h3 className="font-headline font-bold text-base md:text-lg uppercase tracking-[0.2em] md:tracking-[0.3em]">Hub Health Matrix</h3>
             </div>
-            <div className="px-3 py-1 border border-primary/20 bg-primary/5 font-mono text-[10px] text-primary">
-              PROTOCOL: SOVEREIGN ENGINE v8.0
+            <div className="px-3 py-1 border border-primary/20 bg-primary/5 font-mono text-[9px] md:text-[10px] text-primary w-fit">
+              PROTOCOL: SOVEREIGN APEX v9.0
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
             {healthData.map((store) => (
               <HealthArc key={store.id} value={Math.round(store.health)} label={store.name} />
             ))}
@@ -94,34 +94,34 @@ export default function CommandCenter() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Cpu className="w-5 h-5 text-secondary" />
-                <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">Sovereign Action Stream</h3>
+                <h3 className="font-headline font-bold text-base md:text-lg uppercase tracking-[0.2em] md:tracking-[0.3em]">Action Stream</h3>
               </div>
-              <span className="font-mono text-[10px] text-muted-foreground animate-pulse">CYCLING EVERY 7.0S</span>
+              <span className="font-mono text-[8px] md:text-[10px] text-muted-foreground animate-pulse">7.0S CYCLE</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {actions.map((action) => (
-                <div key={action.id} className="tactical-panel p-6 group hover:bg-white/5 transition-colors">
+                <div key={action.id} className="tactical-panel p-4 md:p-6 group hover:bg-white/5 transition-colors">
                   <div className="flex justify-between items-start mb-4">
                     <span className={cn(
-                      "font-mono text-[9px] px-2 py-0.5 border font-bold tracking-widest",
+                      "font-mono text-[8px] md:text-[9px] px-2 py-0.5 border font-bold tracking-widest",
                       action.type === 'CRITICAL' ? "border-destructive text-destructive bg-destructive/10" : "border-primary text-primary bg-primary/10"
                     )}>{action.type}</span>
                     <TrendingUp className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <p className="font-mono text-sm mb-4 leading-relaxed">{action.msg}</p>
-                  <div className="flex items-center justify-between mt-6">
+                  <p className="font-mono text-xs md:text-sm mb-4 leading-relaxed">{action.msg}</p>
+                  <div className="flex items-center justify-between mt-4 md:mt-6">
                     <div className="flex gap-1">
-                      {[1,2,3,4,5].map(i => <div key={i} className="w-4 h-1 bg-primary/20" />)}
+                      {[1,2,3].map(i => <div key={i} className="w-3 md:w-4 h-1 bg-primary/20" />)}
                     </div>
-                    <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Confidence: 99.1%</span>
+                    <span className="font-mono text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest">Conf: 99.1%</span>
                   </div>
                 </div>
               ))}
               {actions.length === 0 && (
-                <div className="col-span-2 py-20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-4">
-                  <Activity className="w-8 h-8 text-white/10 animate-pulse" />
-                  <p className="font-mono text-xs text-muted-foreground tracking-widest uppercase">Initializing Sovereign Link...</p>
+                <div className="col-span-1 sm:col-span-2 py-16 md:py-20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-4">
+                  <Activity className="w-6 h-6 md:w-8 h-8 text-white/10 animate-pulse" />
+                  <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase">Initializing Stream...</p>
                 </div>
               )}
             </div>
@@ -130,31 +130,31 @@ export default function CommandCenter() {
           {/* Self-Healing Panel */}
           <Card className="tactical-panel border-none bg-black/40 h-fit">
             <CardHeader className="border-b border-white/5 pb-4">
-              <CardTitle className="text-sm font-headline font-bold flex items-center gap-3">
+              <CardTitle className="text-xs md:text-sm font-headline font-bold flex items-center gap-3">
                 <Zap className="w-4 h-4 text-secondary animate-pulse" />
-                SELF-HEALING EVENT LOG
+                SELF-HEALING LOG
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
               {healthData.filter(s => s.health < 90).map(store => (
-                <div key={store.id} className="p-4 bg-white/5 border border-white/5 relative overflow-hidden">
+                <div key={store.id} className="p-3 md:p-4 bg-white/5 border border-white/5 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-1">
                     <AlertTriangle className="w-3 h-3 text-accent animate-bounce" />
                   </div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-mono text-xs font-bold text-primary">{store.id}</span>
-                    <span className="font-mono text-[10px] text-accent">HEALTH: {Math.round(store.health)}%</span>
+                    <span className="font-mono text-[10px] md:text-xs font-bold text-primary">{store.id}</span>
+                    <span className="font-mono text-[8px] md:text-[10px] text-accent">HEALTH: {Math.round(store.health)}%</span>
                   </div>
-                  <div className="text-[10px] font-mono text-muted-foreground mb-3 uppercase">Triggering Auto-Restock Hook...</div>
+                  <div className="text-[9px] md:text-[10px] font-mono text-muted-foreground mb-3 uppercase">Restock Triggered...</div>
                   <div className="h-1 bg-white/10 w-full rounded-full overflow-hidden">
                     <div className="h-full bg-secondary animate-[loading_2s_infinite]" style={{ width: '60%' }} />
                   </div>
                 </div>
               ))}
               {healthData.every(s => s.health >= 90) && (
-                <div className="text-center py-10">
-                  <div className="text-secondary font-mono text-xs font-bold uppercase tracking-widest mb-2">Neural Parity Achieved</div>
-                  <div className="text-[9px] text-muted-foreground font-mono uppercase">System Optimal</div>
+                <div className="text-center py-8 md:py-10">
+                  <div className="text-secondary font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest mb-2">Neural Parity Achieved</div>
+                  <div className="text-[8px] md:text-[9px] text-muted-foreground font-mono uppercase">System Optimal</div>
                 </div>
               )}
             </CardContent>
