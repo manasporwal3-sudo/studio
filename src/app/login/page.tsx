@@ -134,7 +134,7 @@ export default function LoginPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1">
               <Button 
                 variant="outline" 
                 onClick={() => quickAccess('admin@xyz.com', 'AdminPass2024')}
@@ -142,14 +142,6 @@ export default function LoginPage() {
               >
                 <span className="text-[10px] font-bold text-primary">ADMIN ACCESS</span>
                 <span className="text-[8px] opacity-40 font-mono">AdminPass2024</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => quickAccess('user@abc.com', 'UserPass2024')}
-                className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
-              >
-                <span className="text-[10px] font-bold text-primary">USER ACCESS</span>
-                <span className="text-[8px] opacity-40 font-mono">UserPass2024</span>
               </Button>
             </div>
           </div>
