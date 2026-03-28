@@ -28,7 +28,7 @@ import { FloatingChatbot } from './floating-chatbot';
 
 function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string, activeStoreId: string, pathname: string, onItemClick?: () => void }) {
   const adminItems = [
-    { name: 'Global Command', icon: <Globe className="w-4 h-4" />, href: '/admin/dashboard' },
+    { name: 'Active Stores', icon: <Activity className="w-4 h-4" />, href: '/admin/dashboard' },
     { name: 'Node Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
     { name: 'Sovereign Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
@@ -81,7 +81,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   
   const activeStoreId = searchParams.get('store') || 'PRIMARY-NODE';
-  const role = userProfile?.roleIds?.[0] || 'darkstore';
+  const role = userProfile?.role || 'store';
 
   useEffect(() => {
     setIsMounted(true);
