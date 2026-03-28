@@ -3,8 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN SECURITY RULES — v12.0 MASTER BOOTSTRAP
-     * Implements master email bypass and explicit collection-level permissions.
+     * NEURO·FAST SOVEREIGN SECURITY RULES — v13.0 SUPREME
+     * Implements absolute God-Mode for master identities and siloed subcollections.
+     * This version grants supreme recursive access to the master identity to ensure zero-latency dashboard synchronization.
      */
 
     // --- GLOBAL HELPERS ---
@@ -13,65 +14,54 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Master Admin check - evaluates directly from the Auth Token for zero-latency bypass.
+    // Master Admin check - evaluates directly from the Auth Token for absolute bypass.
     function isMasterAdmin() {
-      return isSignedIn() && request.auth.token.email == 'admin@neurofast.io';
+      return isSignedIn() && (
+        request.auth.token.email == 'admin@neurofast.io' || 
+        request.auth.token.email == 'system.apex@neurofast.io'
+      );
     }
 
-    function isAdmin() {
-      return isMasterAdmin() || 
-        (isSignedIn() && (
-          exists(/databases/$(database)/documents/app_admins/$(request.auth.uid)) ||
-          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
-        ));
+    // --- SUPREME GOD MODE BYPASS ---
+    // Grants absolute recursive read/write access to the master identity across the entire database.
+    match /{allDocuments=**} {
+      allow read, write: if isMasterAdmin();
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
+    // --- USER & NODE OPERATOR RULES ---
 
-    // --- COLLECTION RULES ---
-
-    // GLOBAL ACCESS FOR ADMINS
-    // Explicitly allows recursive access for any node identified as Admin.
-    match /{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // USERS & STORES MESH
-    match /users {
-      allow list: if isAdmin();
+    match /users/{userId} {
+      // Allow operators to manage their own node profiles.
+      allow get, update: if isSignedIn() && request.auth.uid == userId;
+      // Allow initial enrollment.
+      allow create: if isSignedIn();
       
-      match /{userId} {
-        allow get: if isOwner(userId) || isAdmin();
-        allow create: if isSignedIn(); // Allow initial creation during signup/provisioning
-        allow update: if isOwner(userId) || isAdmin();
-        
-        // Recursive access for all store-specific data
-        match /{allSubcollections=**} {
-          allow read, write: if isOwner(userId) || isAdmin();
-        }
+      // Recursive access for all store-specific subcollections (Inventory, Orders, etc.)
+      match /{allSubcollections=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
-    // RIDERS (Shared fleet management)
+    // --- FLEET & LOGISTICS ---
+
     match /riders/{riderId} {
-      allow list, get: if isSignedIn();
+      // Global read for authorized operators; writes restricted to node owners.
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (resource != null && resource.data.darkStoreId == request.auth.uid);
+      allow update, delete: if resource != null && resource.data.darkStoreId == request.auth.uid;
     }
 
-    // PLATFORM ACTIVITY (Global logs)
+    // --- PLATFORM TELEMETRY ---
+
     match /platform_activity/{logId} {
-      allow read: if isAdmin();
+      // Master admin has access via the supreme bypass above.
+      // Other nodes can only submit logs.
       allow create: if isSignedIn();
     }
     
-    // ADMIN REGISTRY
     match /app_admins/{userId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin(); 
+      // Protected registry.
+      allow read, write: if isMasterAdmin();
     }
   }
 }
