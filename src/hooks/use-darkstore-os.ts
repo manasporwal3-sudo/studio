@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 
 export interface InventoryItem {
   id: string;
@@ -11,9 +11,9 @@ export interface InventoryItem {
   costPrice: number;
   sellingPrice: number;
   reorderPoint: number;
-  category: string;
+  category?: string;
   status: 'healthy' | 'low' | 'critical';
-  unitPrice?: number; // Compat
+  unitPrice?: number;
   margin?: number;
 }
 
@@ -21,7 +21,7 @@ export function useDarkStoreOS(storeId: string) {
   const { user } = useUser();
   const db = useFirestore();
   
-  // Real-time Inventory Mesh
+  // Real-time Inventory Mesh -Traced to User Subcollection
   const inventoryQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return collection(db, 'users', user.uid, 'inventory');
@@ -37,20 +37,19 @@ export function useDarkStoreOS(storeId: string) {
   useEffect(() => {
     if (rawInventory) {
       const processed = rawInventory.map(item => {
-        // Margin Health Triage: (SP - CP) / SP
-        const margin = (item.sellingPrice - item.costPrice) / item.sellingPrice;
+        const margin = (item.sellingPrice - item.costPrice) / (item.sellingPrice || 1);
         let status: 'healthy' | 'low' | 'critical' = 'healthy';
         
         if (item.currentStock <= 0) {
           status = 'critical';
-        } else if (item.currentStock <= item.reorderPoint) {
+        } else if (item.currentStock <= (item.reorderPoint || 5)) {
           status = 'low';
         }
 
         return {
           ...item,
           margin,
-          unitPrice: item.sellingPrice, // Internal mapping for components expecting unitPrice
+          unitPrice: item.sellingPrice,
           status
         } as InventoryItem;
       });
@@ -58,19 +57,19 @@ export function useDarkStoreOS(storeId: string) {
     }
   }, [rawInventory]);
 
-  // Telemetry for trends based on the live inventory data
+  // Derive trends from actual inventory state (Velocity is 0 if no sales recorded)
   useEffect(() => {
     if (inventory.length > 0) {
-      // Simulate velocity based on inventory size and stock levels
-      const mockTrends = Array.from({ length: 8 }).map((_, i) => ({
-        time: `${8 + i}:00`,
-        sales: Math.floor(Math.random() * (inventory.length * 0.5))
+      // Create static baseline for trends based on SKU count
+      const baselineTrends = Array.from({ length: 8 }).map((_, i) => ({
+        time: `${8 + i * 2}:00`,
+        sales: 0 // Zero fabrication
       }));
-      setSalesTrends(mockTrends);
+      setSalesTrends(baselineTrends);
       
-      // Calculate revenue (retail value)
-      const totalRev = inventory.reduce((acc, item) => acc + (item.sellingPrice * (Math.random() * 5)), 0);
-      setRevenue(totalRev);
+      // Calculate real potential revenue (Stock Value)
+      const stockValue = inventory.reduce((acc, item) => acc + (item.sellingPrice * item.currentStock), 0);
+      setRevenue(stockValue);
     }
   }, [inventory.length]);
 
