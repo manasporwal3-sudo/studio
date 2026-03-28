@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import {
   Cpu,
   Loader2,
   Package,
-  BarChart3,
+  LayoutDashboard,
   Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,12 +28,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 import { FloatingChatbot } from './floating-chatbot';
 
 function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string, activeStoreId: string, pathname: string, onItemClick?: () => void }) {
+  // ADMIN-ONLY SIDEBAR (GOD MODE)
   const adminItems = [
-    { name: 'Active Stores', icon: <Activity className="w-4 h-4" />, href: '/admin/dashboard' },
-    { name: 'Node Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
+    { name: 'Active Stores', icon: <LayoutDashboard className="w-4 h-4" />, href: '/admin/dashboard' },
+    { name: 'Network Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
     { name: 'Sovereign Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
 
+  // STORE-ONLY SIDEBAR (OPERATIONAL HUB)
   const storeItems = [
     { name: 'Neural Hub', icon: <Package className="w-4 h-4" />, href: '/darkstore/inventory' },
     { name: 'Rider Matrix', icon: <Network className="w-4 h-4" />, href: '/riders' },
@@ -46,7 +49,7 @@ function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string
   return (
     <nav className="flex-1 space-y-1">
       <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.3em] uppercase opacity-50">
-        {role === 'admin' ? 'Strategic Command' : 'Operational Hub'}
+        {role === 'admin' ? 'Strategic Oversight' : 'Operational Hub'}
       </p>
       {navItems.map((item) => {
         const isActive = pathname === item.href;
