@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ADMIN_EMAILS } from '@/services/auth-service';
 import { 
   Shield, 
   Store, 
@@ -153,6 +154,8 @@ export default function SignupPage() {
       const user = cred.user;
 
       setUploadStatus("PROVISIONING HUB...");
+      const role = ADMIN_EMAILS.includes(data.email.toLowerCase()) ? 'admin' : 'store';
+      
       const userData = {
         uid: user.uid,
         displayName: data.fullName,
@@ -163,7 +166,7 @@ export default function SignupPage() {
         gstNumber: data.gstNumber,
         storeName: data.storeName,
         city: data.city,
-        role: 'store',
+        role: role,
         plan: data.plan,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -172,13 +175,15 @@ export default function SignupPage() {
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
       recordStoreActivity(db, user.uid);
       
-      setUploadStatus(`ENROLLING MESH (${data.inventory.length} SKUs)...`);
-      await bulkUploadInventory(db, user.uid, data.inventory, (count) => {
-        setUploadStatus(`ENROLLING MESH (${count} / ${data.inventory.length})...`);
-      });
+      if (role === 'store') {
+        setUploadStatus(`ENROLLING MESH (${data.inventory.length} SKUs)...`);
+        await bulkUploadInventory(db, user.uid, data.inventory, (count) => {
+          setUploadStatus(`ENROLLING MESH (${count} / ${data.inventory.length})...`);
+        });
+      }
       
-      toast({ title: "Node Deployment Successful", description: "Dark Store node integrated into the global mesh." });
-      router.push('/darkstore/inventory');
+      toast({ title: "Node Deployment Successful", description: `${role === 'admin' ? 'Admin terminal' : 'Dark Store node'} integrated into the global mesh.` });
+      router.push(role === 'admin' ? '/admin/dashboard' : '/darkstore/inventory');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Deployment Aborted", description: error.message });
       setUploadStatus(null);
@@ -254,6 +259,11 @@ export default function SignupPage() {
                       <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Establish primary neural link for node control.</p>
                     </div>
                     <div className="grid gap-6">
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm">
+                        <p className="text-[9px] font-mono text-primary uppercase leading-relaxed font-bold">
+                          Admin Hint: Use 'admin@neurofast.io' for Sovereign Command Access.
+                        </p>
+                      </div>
                       <Input placeholder="OPERATOR FULL NAME" {...register('fullName')} className="cyber-input h-12" />
                       <Input placeholder="MOBILE NODE (+91)" {...register('mobile')} className="cyber-input h-12" />
                       <Input type="email" placeholder="EMAIL IDENTITY" {...register('email')} className="cyber-input h-12" />

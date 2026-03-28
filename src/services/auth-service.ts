@@ -9,7 +9,7 @@ import { Firestore, writeBatch, doc, collection } from 'firebase/firestore';
 import { AppUser, DarkStore, UserRole } from '@/types';
 
 // SYSTEM ADMIN SEED LIST
-const ADMIN_EMAILS = [
+export const ADMIN_EMAILS = [
   'admin@neurofast.io',
   'system.apex@neurofast.io'
 ];
