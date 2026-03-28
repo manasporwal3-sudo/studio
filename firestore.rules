@@ -3,58 +3,35 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO-FAST SECURITY RULES
+     * NEURO-FAST SECURITY RULES — VERSION 9.0 APEX
      *
      * Core Philosophy:
-     * This ruleset enforces a strict hybrid model of individual ownership and role-based access 
-     * control (RBAC) powered by data denormalization. Authorization is independent—documents 
-     * carry the necessary metadata (member maps) to authorize access without cross-document lookups.
-     *
-     * Data Structure:
-     * - /users/{userId}: Private user profiles.
-     * - /darkStores/{darkStoreId}: Central hubs for inventory and sales.
-     * - /riders/{riderId}: Delivery personnel profiles.
-     * - /products & /vendors: Global catalogs.
-     *
-     * Key Security Decisions:
-     * 1. Authorization Independence: DarkStore subcollections (inventory, sales, etc.) denormalize 
-     *    the store's 'members' map onto every document. This allows for fast, efficient rules 
-     *    and secure list operations.
-     * 2. Admin Privileges: Global administrative access is controlled via the /app_admins collection.
-     * 3. Relational Integrity: In this prototyping phase, rules strictly enforce that internal 'id' 
-     *    fields and 'owner' fields match the authenticated user, but do not enforce strict schema types.
-     * 4. Immutable Links: Once a document is linked to a user or a store, that link is immutable 
-     *    to prevent unauthorized data migration.
+     * This ruleset enforces strict individual ownership for node operators.
+     * Documents under /users/{userId} are private to that user and accessible by admins.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
 
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user exists in the app_admins collection. */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/app_admins/$(request.auth.uid));
     }
 
-    /** @description Checks if the provided ID matches the authenticated user's UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks ownership and ensures the document exists for destructive operations. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** @description Checks if the authenticated user has a specific role in a members map. */
     function hasRole(membersMap, role) {
       return isSignedIn() && membersMap[request.auth.uid] == role;
     }
 
-    /** @description Checks if the authenticated user is present in a members map. */
     function isMember(membersMap) {
       return isSignedIn() && request.auth.uid in membersMap;
     }
@@ -62,26 +39,24 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     /**
-     * @description Core user profiles. Users can manage their own data.
-     * @path /users/{userId}
-     * @allow (create) if auth.uid == userId
-     * @deny (update) if auth.uid != userId
-     * @principle Path-based ownership and relational integrity.
+     * @description Core user profiles and private data trees.
+     * Users have full control over their own node and its subcollections (inventory, analytics, etc).
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
       allow delete: if isAdmin();
+
+      // Allow recursive access to all user-owned subcollections (Inventory, Orders, etc.)
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
     }
 
     /**
      * @description System-wide role definitions.
-     * @path /app_roles/{roleId}
-     * @allow (get) if signedIn
-     * @deny (write) if not admin
-     * @principle Global read-only with admin-only management.
      */
     match /app_roles/{roleId} {
       allow get, list: if isSignedIn();
@@ -90,10 +65,6 @@ service cloud.firestore {
 
     /**
      * @description Admin registry used for DBAC checks.
-     * @path /app_admins/{userId}
-     * @allow (get) if signedIn
-     * @deny (write) if not existing admin
-     * @principle Controlled administrative access.
      */
     match /app_admins/{userId} {
       allow get: if isSignedIn();
@@ -101,11 +72,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Dark store locations. Uses a 'members' map for RBAC.
-     * @path /darkStores/{darkStoreId}
-     * @allow (update) if user is 'manager' in store members map
-     * @deny (create) if user is not the managerUserId
-     * @principle Authorization Independence via internal membership map.
+     * @description Dark store locations (Legacy/Shared model).
      */
     match /darkStores/{darkStoreId} {
       allow get, list: if isMember(resource.data.members) || isAdmin();
@@ -113,11 +80,6 @@ service cloud.firestore {
       allow update: if resource != null && (hasRole(resource.data.members, 'manager') || isAdmin());
       allow delete: if isAdmin();
 
-      // --- SUBCOLLECTIONS (Authorization Independence) ---
-      
-      /**
-       * @description All subcollections under DarkStores inherit access from a denormalized 'darkStoreMembers' map.
-       */
       match /{allSubcollections=**} {
         allow get, list: if isMember(resource.data.darkStoreMembers) || isAdmin();
         allow create: if isMember(request.resource.data.darkStoreMembers) || isAdmin();
@@ -127,26 +89,18 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rider profiles. Riders own their profile; Managers of associated stores can view/list.
-     * @path /riders/{riderId}
-     * @allow (list) if auth.uid is a managerId in darkStoreMemberships
-     * @deny (update) if auth.uid is not riderId
-     * @principle QAP-compliant listing via denormalized membership map.
+     * @description Rider profiles.
      */
     match /riders/{riderId} {
-      allow get: if isOwner(riderId) || isAdmin() || isMember(resource.data.darkStoreMemberships);
-      allow list: if isSignedIn(); // Filtered by darkStoreMemberships in client query
-      allow create: if isOwner(riderId) && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(riderId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(riderId) || isAdmin();
+      allow get: if isOwner(riderId) || isAdmin() || (resource != null && isMember(resource.data.darkStoreMemberships));
+      allow list: if isSignedIn(); 
+      allow create: if isSignedIn(); 
+      allow update: if isOwner(riderId) || isAdmin();
+      allow delete: if isOwner(riderId) || isAdmin();
     }
 
     /**
      * @description Global product catalog.
-     * @path /products/{productId}
-     * @allow (get) if signedIn
-     * @deny (write) if not admin
-     * @principle Global read, restricted write.
      */
     match /products/{productId} {
       allow get, list: if isSignedIn();
@@ -155,15 +109,10 @@ service cloud.firestore {
 
     /**
      * @description Global vendor catalog.
-     * @path /vendors/{vendorId}
-     * @allow (get) if signedIn
-     * @deny (write) if not admin
-     * @principle Global read, restricted write.
      */
     match /vendors/{vendorId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
-
   }
 }
