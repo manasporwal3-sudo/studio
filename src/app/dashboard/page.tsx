@@ -40,10 +40,16 @@ const HealthArc = ({ value, label }: { value: number, label: string }) => {
 };
 
 export default function CommandCenter() {
-  const [healthData, setHealthData] = useState(STORES.map(s => ({ ...s, health: 85 + Math.random() * 10 })));
+  const [mounted, setMounted] = useState(false);
+  // Initialize with fixed values for hydration stability
+  const [healthData, setHealthData] = useState(STORES.map(s => ({ ...s, health: 90 })));
   const [actions, setActions] = useState<{ id: number, msg: string, time: number, type: string }[]>([]);
 
   useEffect(() => {
+    setMounted(true);
+    // Randomize health data after mount
+    setHealthData(STORES.map(s => ({ ...s, health: 85 + Math.random() * 10 })));
+
     const interval = setInterval(() => {
       setHealthData(prev => prev.map(s => ({
         ...s,

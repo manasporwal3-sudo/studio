@@ -5,9 +5,10 @@ import { generateDashboardInsights, type DashboardInsightsOutput } from "@/ai/fl
 import { SKUS, STORES } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Brain, AlertCircle, TrendingUp, ShieldAlert, Sparkles, Loader2, FileText, Terminal, Activity } from "lucide-react"
+import { Brain, AlertCircle, TrendingUp, ShieldAlert, Sparkles, Loader2, Terminal, Activity, RefreshCw } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 export function AIInsights() {
   const searchParams = useSearchParams()
@@ -16,31 +17,35 @@ export function AIInsights() {
   
   const [insights, setInsights] = useState<DashboardInsightsOutput | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadInsights = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const input = {
+        storeProfile: JSON.stringify({
+          store_id: storeId,
+          company_name: activeStore?.name,
+          platform: "Zepto Hub",
+          city: activeStore?.city,
+          hub_historical_context: "High temperature forecast. Previous weekend saw a 40% spike in beverage demand. Supply chain delays noted on Dairy SKU-001."
+        }),
+        inventorySnapshot: JSON.stringify(SKUS),
+        auditLog: "LOGIN: Admin @ 08:00; MANUAL_EDIT: SKU-005 stock adjusted (-10); SYSTEM: Neural parity check successful.",
+        previousAnalyses: ""
+      }
+      const result = await generateDashboardInsights(input)
+      setInsights(result)
+    } catch (err: any) {
+      console.error("Sovereign Engine Failure:", err)
+      setError(err.message || "Failed to establish neural link with Sovereign Engine.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadInsights() {
-      setLoading(true)
-      try {
-        const input = {
-          storeProfile: JSON.stringify({
-            store_id: storeId,
-            company_name: activeStore?.name,
-            platform: "Zepto Hub",
-            city: activeStore?.city,
-            hub_historical_context: "High temperature forecast. Previous weekend saw a 40% spike in beverage demand. Supply chain delays noted on Dairy SKU-001."
-          }),
-          inventorySnapshot: JSON.stringify(SKUS),
-          auditLog: "LOGIN: Admin @ 08:00; MANUAL_EDIT: SKU-005 stock adjusted (-10); SYSTEM: Neural parity check successful.",
-          previousAnalyses: ""
-        }
-        const result = await generateDashboardInsights(input)
-        setInsights(result)
-      } catch (err) {
-        console.error("Sovereign Engine Failure:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
     loadInsights()
   }, [storeId, activeStore])
 
@@ -52,6 +57,21 @@ export function AIInsights() {
           <h2 className="text-sm font-mono text-primary uppercase tracking-[0.3em]">Engaging Sovereign Apex v9.0...</h2>
         </div>
         <Skeleton className="h-96 w-full tactical-panel bg-white/5" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-6 tactical-panel bg-destructive/5 border-destructive/20">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <div className="text-center space-y-2">
+          <h2 className="font-headline text-lg text-destructive uppercase tracking-widest">Neural Link Interrupted</h2>
+          <p className="font-mono text-xs text-muted-foreground">{error}</p>
+        </div>
+        <Button onClick={loadInsights} variant="outline" className="font-mono text-[10px] uppercase tracking-widest border-destructive/20 hover:bg-destructive/10">
+          <RefreshCw className="w-3 h-3 mr-2" /> Attempt Re-sync
+        </Button>
       </div>
     )
   }
