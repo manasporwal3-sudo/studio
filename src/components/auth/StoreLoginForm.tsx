@@ -7,9 +7,10 @@ import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { validateAndRoute } from '@/services/auth-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, User, Key, Loader2, ArrowLeft } from 'lucide-react';
+import { Package, User, Key, Loader2, ArrowLeft, Cpu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { recordStoreActivity } from '@/firebase/non-blocking-updates';
 
 export function StoreLoginForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
@@ -29,6 +30,7 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
       const validation = await validateAndRoute(db, auth, cred.user.uid, 'store');
       
       if (validation.success) {
+        recordStoreActivity(db, cred.user.uid);
         toast({ title: "Uplink Established", description: "Node authorized. Synchronizing local mesh." });
         router.push('/darkstore/inventory');
       } else {
@@ -51,6 +53,11 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
           <h2 className="text-xl font-headline italic uppercase text-primary">Store Operator</h2>
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Encrypted Local Hub Access</p>
         </div>
+      </div>
+
+      <div className="p-4 bg-primary/10 border border-primary/20 rounded-sm mb-6 flex items-center gap-3">
+        <Cpu className="w-4 h-4 text-primary animate-pulse" />
+        <span className="text-[8px] font-mono text-primary uppercase tracking-widest">Scanning Authorization Vectors</span>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4">
@@ -76,7 +83,7 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
             required
           />
         </div>
-        <Button disabled={isLoading} type="submit" className="w-full h-12 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
+        <Button disabled={isLoading} type="submit" className="w-full h-12 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20 border-none">
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "INITIATE HUB UPLINK"}
         </Button>
       </form>

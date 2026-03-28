@@ -1,3 +1,4 @@
+
 'use client';
     
 import {
@@ -28,6 +29,26 @@ export function recordStoreActivity(db: Firestore, uid: string) {
     // Silent fail for non-critical telemetry
   });
 }
+
+/**
+ * Logs a global platform activity event for admin oversight.
+ */
+export function logPlatformActivity(db: Firestore, event: {
+  type: 'signup' | 'order' | 'restock' | 'alert' | 'system';
+  message: string;
+  storeId?: string;
+  impact?: string;
+}) {
+  const colRef = collection(db, 'platform_activity');
+  addDoc(colRef, {
+    ...event,
+    timestamp: serverTimestamp()
+  }).catch(() => {
+    // Silent fail for logs
+  });
+}
+
+import { collection } from 'firebase/firestore';
 
 /**
  * Initiates a setDoc operation for a document reference.

@@ -7,9 +7,10 @@ import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { validateAndRoute } from '@/services/auth-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, User, Key, Loader2, ArrowLeft, Terminal } from 'lucide-react';
+import { Shield, User, Key, Loader2, ArrowLeft, Terminal, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { recordStoreActivity } from '@/firebase/non-blocking-updates';
 
 export function AdminLoginForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
@@ -29,6 +30,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
       const validation = await validateAndRoute(db, auth, cred.user.uid, 'admin');
       
       if (validation.success) {
+        recordStoreActivity(db, cred.user.uid);
         toast({ title: "Admin Access Granted", description: "Global Command Interface authorized." });
         router.push('/admin/dashboard');
       } else {
@@ -51,6 +53,11 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           <h2 className="text-xl font-headline italic uppercase text-destructive">Terminal Admin</h2>
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Sovereign Strategic Control</p>
         </div>
+      </div>
+
+      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-sm mb-6 flex items-center gap-3">
+        <Activity className="w-4 h-4 text-destructive animate-pulse" />
+        <span className="text-[8px] font-mono text-destructive uppercase tracking-widest">Awaiting Authorized Uplink</span>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4">
@@ -79,7 +86,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
         <Button 
           disabled={isLoading} 
           type="submit" 
-          className="w-full h-12 font-bold uppercase tracking-widest text-xs bg-destructive/80 hover:bg-destructive text-white shadow-lg shadow-destructive/20"
+          className="w-full h-12 font-bold uppercase tracking-widest text-xs bg-destructive/80 hover:bg-destructive text-white shadow-lg shadow-destructive/20 border-none"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ESTABLISH COMMAND UPLINK"}
         </Button>

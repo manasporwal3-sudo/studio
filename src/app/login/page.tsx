@@ -67,8 +67,9 @@ export default function LoginPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   onClick={() => setPortal('store')}
+                  className="cursor-pointer"
                 >
-                  <Card className="h-full tactical-panel cursor-pointer group hover:bg-primary/5 transition-all border-white/10 bg-black/40">
+                  <Card className="h-full tactical-panel group hover:bg-primary/5 transition-all border-white/10 bg-black/40">
                     <CardContent className="p-12 flex flex-col items-center text-center justify-center h-full space-y-6">
                       <div className="w-20 h-20 bg-primary/10 border border-primary/20 flex items-center justify-center rounded-3xl group-hover:scale-110 group-hover:bg-primary/20 transition-all">
                         <Package className="w-10 h-10 text-primary" />
@@ -92,8 +93,9 @@ export default function LoginPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   onClick={() => setPortal('admin')}
+                  className="cursor-pointer"
                 >
-                  <Card className="h-full tactical-panel cursor-pointer group hover:bg-destructive/5 transition-all border-white/10 bg-black/40 before:bg-destructive/60">
+                  <Card className="h-full tactical-panel group hover:bg-destructive/5 transition-all border-white/10 bg-black/40 before:bg-destructive/60">
                     <CardContent className="p-12 flex flex-col items-center text-center justify-center h-full space-y-6">
                       <div className="w-20 h-20 bg-destructive/10 border border-destructive/20 flex items-center justify-center rounded-3xl group-hover:scale-110 group-hover:bg-destructive/20 transition-all">
                         <Shield className="w-10 h-10 text-destructive" />
