@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,6 +7,7 @@ import * as z from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
 import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,6 +77,7 @@ export default function SignupPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -149,14 +150,13 @@ export default function SignupPage() {
         })).filter(item => item.name);
         
         if (parsedData.length > 0) {
-          // If the first item is empty (default), remove it
           if (fields.length === 1 && !fields[0].name) {
             remove(0);
           }
           parsedData.forEach(item => append(item));
           toast({ 
-            title: "Bulk Mesh Uplink Success", 
-            description: `${parsedData.length} SKUs integrated into node mesh.` 
+            title: "Bulk Mesh Uplink Ready", 
+            description: `${parsedData.length} SKUs prepared for node integration.` 
           });
         }
       }
@@ -166,9 +166,11 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setLoading(true);
     try {
+      setUploadStatus("ESTABLISHING IDENTITY...");
       const cred = await initiateEmailSignUp(auth, data.email, data.password);
       const user = cred.user;
 
+      setUploadStatus("CONFIGURING HUB...");
       const userData = {
         id: user.uid,
         firstName: data.fullName.split(' ')[0],
@@ -190,19 +192,16 @@ export default function SignupPage() {
 
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
       
-      const invCol = collection(db, 'users', user.uid, 'inventory');
-      data.inventory.forEach(item => {
-        addDocumentNonBlocking(invCol, {
-          ...item,
-          addedAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        });
+      setUploadStatus(`INTEGRATING MESH (0 / ${data.inventory.length})...`);
+      await bulkUploadInventory(db, user.uid, data.inventory, (count) => {
+        setUploadStatus(`INTEGRATING MESH (${count} / ${data.inventory.length})...`);
       });
       
       toast({ title: "Node Enrollment Complete", description: "Your dark store hub is now live in the neural mesh." });
       router.push('/darkstore/inventory');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Deployment Failed", description: error.message });
+      setUploadStatus(null);
     } finally {
       setLoading(false);
     }
@@ -308,7 +307,7 @@ export default function SignupPage() {
                       <Textarea placeholder="FULL HUB GEOLOCATION ADDRESS" {...register('address')} className="cyber-input min-h-[100px]" />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input placeholder="PIN CODE (6 DIGITS)" {...register('pinCode')} className="cyber-input h-12" />
-                        <Input placeholder="GST NUMBER (OPTIONAL)" {...register('gstNumber')} className="cyber-input h-12" />
+                        <Input placeholder="GST NUMBER (15 CHARS)" {...register('gstNumber')} className="cyber-input h-12" />
                       </div>
                     </div>
                   </div>
@@ -458,7 +457,12 @@ export default function SignupPage() {
                       disabled={loading || !formData.terms}
                       className="flex-[2] h-14 font-headline text-xs tracking-widest uppercase bg-secondary text-black shadow-[0_0_25px_rgba(0,255,136,0.3)]"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Zap className="w-5 h-5 mr-2" /> Deploy Node</>}
+                      {loading ? (
+                        <div className="flex flex-col items-center">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-[8px] font-mono mt-1">{uploadStatus || "DEPLOYING..."}</span>
+                        </div>
+                      ) : <><Zap className="w-5 h-5 mr-2" /> Deploy Node</>}
                     </Button>
                   )}
                 </div>

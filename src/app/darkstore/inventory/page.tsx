@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useRef } from 'react';
@@ -7,13 +6,15 @@ import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
 import { doc, collection } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap, Plus, Trash2, Edit2, AlertCircle, FileSpreadsheet } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap, Plus, Trash2, Edit2, AlertCircle, FileSpreadsheet, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import Papa from 'papaparse';
@@ -25,6 +26,7 @@ function InventoryContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -37,14 +39,14 @@ function InventoryContent() {
     sku: ''
   });
 
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user?.uid) return;
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => {
         const parsedData = results.data.map((row: any) => ({
           name: row.Name || row.name || "",
           sku: row.SKU || row.sku || "",
@@ -52,17 +54,27 @@ function InventoryContent() {
           reorderPoint: Number(row["Reorder Point"] || row.reorderPoint || 5),
           costPrice: Number(row["Cost Price"] || row.costPrice || 0),
           sellingPrice: Number(row["Selling Price"] || row.sellingPrice || 0),
-          addedAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
         })).filter(item => item.name);
         
         if (parsedData.length > 0) {
-          const colRef = collection(db, 'users', user.uid, 'inventory');
-          parsedData.forEach(item => addDocumentNonBlocking(colRef, item));
-          toast({ 
-            title: "Bulk Mesh Uplink Success", 
-            description: `${parsedData.length} SKUs integrated into local node.` 
-          });
+          setUploadProgress({ current: 0, total: parsedData.length });
+          try {
+            await bulkUploadInventory(db, user.uid, parsedData, (count) => {
+              setUploadProgress(prev => prev ? { ...prev, current: count } : null);
+            });
+            toast({ 
+              title: "Bulk Mesh Uplink Success", 
+              description: `${parsedData.length} SKUs integrated into local node.` 
+            });
+          } catch (e) {
+            toast({ 
+              title: "Uplink Failed", 
+              description: "The batch write protocol was interrupted.",
+              variant: "destructive"
+            });
+          } finally {
+            setUploadProgress(null);
+          }
         }
       }
     });
@@ -144,10 +156,15 @@ function InventoryContent() {
           />
           <Button 
             onClick={() => fileInputRef.current?.click()}
+            disabled={uploadProgress !== null}
             className="bg-secondary/10 text-secondary border border-secondary/20 font-headline text-[10px] tracking-widest px-6 hover:bg-secondary/20"
           >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            BULK IMPORT
+            {uploadProgress ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+            )}
+            {uploadProgress ? "UPLINKING..." : "BULK IMPORT"}
           </Button>
 
           <Button 
@@ -189,6 +206,18 @@ function InventoryContent() {
           </Dialog>
         </div>
       </div>
+
+      {uploadProgress && (
+        <Card className="tactical-panel bg-primary/5 border-primary/20 animate-in fade-in slide-in-from-top-2">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] font-bold">Synchronizing Mesh...</span>
+              <span className="font-mono text-[10px] text-primary">{uploadProgress.current} / {uploadProgress.total} SKUs</span>
+            </div>
+            <Progress value={(uploadProgress.current / uploadProgress.total) * 100} className="h-2" />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-3 tactical-panel border-none bg-black/40 overflow-hidden">
