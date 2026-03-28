@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
@@ -16,7 +17,8 @@ import {
   Menu,
   Terminal,
   Cpu,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { STORES } from '@/lib/mock-data';
@@ -68,38 +70,56 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   const activeStoreId = searchParams.get('store') || STORES[0].id;
 
-  React.useEffect(() => {
-    if (!isUserLoading && !user) {
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isUserLoading && !user && isMounted) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, isMounted]);
 
-  if (isUserLoading || !user) {
+  if (!isMounted || isUserLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Terminal className="w-8 h-8 text-primary animate-pulse" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <Terminal className="w-10 h-10 text-primary animate-pulse" />
+        <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-primary/60">Establishing Sovereign Link...</p>
+      </div>
+    );
+  }
+
+  // Fallback for redirecting state
+  if (!user && pathname !== '/login') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-muted-foreground">Redirecting to Access Node...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex bg-background relative overflow-x-hidden">
-      {/* Decorative Light Blooms */}
-      <div className="radial-bloom bg-primary/10 w-[300px] md:w-[600px] h-[300px] md:h-[600px] -top-24 md:-top-48 -left-24 md:-left-48" />
-      <div className="radial-bloom bg-accent/5 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bottom-0 right-0" />
+      {/* Cinematic Ambient Backgrounds */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2" />
+      </div>
 
       {/* Sidebar Desktop */}
       <aside className="w-64 border-r border-white/5 bg-black/40 backdrop-blur-2xl hidden md:flex flex-col sticky top-0 h-screen z-50">
         <div className="p-8 flex items-center gap-4">
-          <div className="w-10 h-10 bg-primary/20 border border-primary/40 flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.2)]">
             <Shield className="w-6 h-6 text-primary" />
           </div>
           <div>
             <span className="font-headline font-extrabold tracking-tighter text-lg leading-none block">NEURO·FAST</span>
-            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">SOVEREIGN APEX v9.0</span>
+            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">SOVEREIGN v9.0</span>
           </div>
         </div>
 
@@ -107,7 +127,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <NavLinks activeStoreId={activeStoreId} pathname={pathname} />
         </div>
 
-        <div className="p-6 border-t border-white/5">
+        <div className="p-6 border-t border-white/5 bg-white/[0.02]">
           <div className="mb-4 p-4 bg-primary/5 border border-white/5 rounded-sm">
              <div className="flex items-center justify-between mb-1">
                <span className="font-mono text-[8px] text-muted-foreground uppercase">Neural Health</span>
@@ -127,7 +147,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main View */}
+      {/* Main Command View */}
       <div className="flex-1 flex flex-col min-w-0 z-10 w-full">
         <header className="h-16 md:h-20 border-b border-white/5 flex items-center px-4 md:px-12 justify-between bg-black/20 backdrop-blur-md sticky top-0 z-40">
           <div className="flex items-center gap-3 md:gap-6">
@@ -196,7 +216,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-12 max-w-[1800px] mx-auto w-full">
+        <main className="flex-1 p-4 md:p-12 max-w-[1800px] mx-auto w-full relative">
           {children}
         </main>
       </div>
@@ -207,8 +227,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <Terminal className="w-8 h-8 text-primary animate-pulse" />
+        <p className="font-mono text-[10px] uppercase tracking-widest text-primary/40">Initializing Layout Node...</p>
       </div>
     }>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>

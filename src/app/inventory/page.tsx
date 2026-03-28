@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense } from 'react';
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Clock, RefreshCw } from "lucide-react";
+import { Clock, RefreshCw, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 function InventoryContent() {
@@ -15,32 +16,41 @@ function InventoryContent() {
   const storeId = searchParams.get('store') || 'BLR-01';
   const { inventory } = useDarkStoreOS(storeId);
 
+  if (!inventory || inventory.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Synchronizing SKU Brain...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tighter uppercase italic">Inventory Brain</h1>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold">Real-time SKU Matrix</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold">Real-time Node Matrix // Apex v9.0</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 p-2 gap-2 w-full sm:w-auto justify-center">
             <RefreshCw className="w-3 h-3 animate-spin" />
-            AUTO-SYNC: ACTIVE
+            NEURAL PARITY: ACTIVE
           </Badge>
         </div>
       </div>
 
-      <Card className="glass-panel border-none overflow-hidden">
+      <Card className="glass-panel border-none overflow-hidden bg-black/40">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-white/5 hover:bg-transparent">
-                  <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest">SKU / Item</TableHead>
+                <TableRow className="border-white/5 hover:bg-transparent bg-white/5">
+                  <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest">SKU / Identifier</TableHead>
                   <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest hidden sm:table-cell">Category</TableHead>
                   <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest text-right">Runway</TableHead>
                   <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest text-right">Stock</TableHead>
-                  <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest">Node Status</TableHead>
+                  <TableHead className="text-muted-foreground text-[10px] uppercase tracking-widest">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -91,7 +101,12 @@ function InventoryContent() {
 export default function InventoryPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<div className="font-mono text-xs animate-pulse">Establishing Node Link...</div>}>
+      <Suspense fallback={
+        <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Calibrating Node Matrix...</p>
+        </div>
+      }>
         <InventoryContent />
       </Suspense>
     </DashboardLayout>
