@@ -7,10 +7,11 @@ import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { validateAndRoute } from '@/services/auth-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, User, Key, Loader2, ArrowLeft, Terminal, Activity, AlertTriangle } from 'lucide-react';
+import { Shield, User, Key, Loader2, ArrowLeft, Activity, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { recordStoreActivity } from '@/firebase/non-blocking-updates';
+import Link from 'next/link';
 
 export function AdminLoginForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
@@ -26,23 +27,31 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
     setIsLoading(true);
 
     try {
+      // Initiate sign-in. This will fail if the account hasn't been created via /signup.
       const cred = await initiateEmailSignIn(auth, email, password);
+      
+      // Validate that this user actually has the 'admin' role in Firestore.
       const validation = await validateAndRoute(db, auth, cred.user.uid, 'admin');
       
       if (validation.success) {
         recordStoreActivity(db, cred.user.uid);
-        toast({ title: "Admin Access Granted", description: "Global Command Interface authorized." });
+        toast({ title: "Admin Access Granted", description: "Sovereign Command Hub authorized." });
         router.push('/admin/dashboard');
       } else {
-        toast({ title: "Security Override Engaged", description: validation.message, variant: "destructive" });
+        // User exists but role mismatch (e.g. a store operator trying to use admin terminal)
+        toast({ 
+          title: "Security Override", 
+          description: validation.message, 
+          variant: "destructive" 
+        });
       }
     } catch (error: any) {
-      console.error("Login Error:", error);
-      let errorMsg = "Invalid Administrative Credentials.";
+      // Do not throw the error to prevent Next.js error overlays.
+      // Firebase auth/invalid-credential is the common error for "not found" or "wrong password".
+      let errorMsg = "Identity not detected in the mesh.";
       
-      // Handle the unified v10+ error code
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-        errorMsg = "Identity not detected or key mismatch. Ensure you have initiated node enrollment at /signup first.";
+        errorMsg = "This identity has not been enrolled. You MUST complete Node Enrollment at /signup first using admin@neurofast.io.";
       } else if (error.code === 'auth/wrong-password') {
         errorMsg = "Neural Key mismatch. Integrity check failed.";
       }
@@ -69,9 +78,14 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
-      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-sm mb-6 flex items-center gap-3">
-        <Activity className="w-4 h-4 text-destructive animate-pulse" />
-        <span className="text-[8px] font-mono text-destructive uppercase tracking-widest">Awaiting Authorized Uplink</span>
+      <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm mb-6 flex items-start gap-3">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-[9px] font-mono text-primary uppercase font-bold">Node Enrollment Required</p>
+          <p className="text-[8px] font-mono text-muted-foreground uppercase leading-relaxed">
+            Administrative identities are NOT pre-seeded. You must enroll at /signup with 'admin@neurofast.io' to establish your link.
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-4">
@@ -106,9 +120,14 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
         </Button>
       </form>
 
-      <div className="pt-4 text-center">
-        <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-          New Node? <a href="/signup" className="text-primary hover:underline">Initiate Enrollment</a>
+      <div className="pt-4 text-center space-y-4">
+        <Link href="/signup">
+          <Button variant="outline" className="w-full border-primary/20 text-primary font-mono text-[10px] uppercase tracking-widest h-10">
+            Go to Node Enrollment (Signup)
+          </Button>
+        </Link>
+        <p className="text-[9px] font-mono text-muted-foreground/40 uppercase tracking-[0.2em]">
+          NEURO-FAST SOVEREIGN GATEWAY v10.5
         </p>
       </div>
     </div>
