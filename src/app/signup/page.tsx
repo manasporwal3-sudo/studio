@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,9 +27,21 @@ import {
   Loader2, 
   Zap, 
   Cpu,
-  Fingerprint
+  Package,
+  Plus,
+  Trash2,
+  Terminal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const inventoryItemSchema = z.object({
+  name: z.string().min(1, "SKU Name required"),
+  currentStock: z.coerce.number().min(0),
+  costPrice: z.coerce.number().min(0),
+  sellingPrice: z.coerce.number().min(0),
+  reorderPoint: z.coerce.number().min(0),
+  sku: z.string().optional(),
+});
 
 const signupSchema = z.object({
   // Step 1: Owner
@@ -48,7 +60,9 @@ const signupSchema = z.object({
   address: z.string().min(10, "Full address is required"),
   pinCode: z.string().length(6, "PIN Code must be exactly 6 digits"),
   gstNumber: z.string().length(15, "GST must be 15 characters").optional().or(z.literal('')),
-  // Step 3: Operational Matrix
+  // Step 3: Inventory
+  inventory: z.array(inventoryItemSchema).min(1, "At least one SKU is required for node activation"),
+  // Step 4: Operational Matrix
   expectedOrders: z.coerce.number().min(1, "Required"),
   outletsCount: z.coerce.number().min(1, "Required"),
   plan: z.enum(["Free", "Pro"]),
@@ -69,9 +83,18 @@ export default function SignupPage() {
   const auth = useAuth();
   const db = useFirestore();
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<SignupFormValues>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger, control } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { plan: 'Free', terms: false }
+    defaultValues: { 
+      plan: 'Free', 
+      terms: false,
+      inventory: [{ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' }]
+    }
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "inventory"
   });
 
   const password = watch('password', '');
@@ -94,13 +117,15 @@ export default function SignupPage() {
     let fieldsToValidate: any[] = [];
     if (step === 1) fieldsToValidate = ['fullName', 'mobile', 'email', 'password', 'confirmPassword'];
     if (step === 2) fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'gstNumber'];
+    if (step === 3) fieldsToValidate = ['inventory'];
     
     const isValid = await trigger(fieldsToValidate as any);
     if (isValid) setStep(step + 1);
     else {
+      const firstError = Object.keys(errors)[0] as keyof SignupFormValues;
       toast({
-        title: "Tactical Error",
-        description: "Please correct the highlighted parameters.",
+        title: "Validation Error",
+        description: errors[firstError]?.message?.toString() || "Please review your entries.",
         variant: "destructive"
       });
     }
@@ -131,7 +156,18 @@ export default function SignupPage() {
         updatedAt: new Date().toISOString()
       };
 
+      // Create profile
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
+      
+      // Initialize inventory subcollection
+      const invCol = collection(db, 'users', user.uid, 'inventory');
+      data.inventory.forEach(item => {
+        addDocumentNonBlocking(invCol, {
+          ...item,
+          addedAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        });
+      });
       
       toast({ title: "Node Enrollment Complete", description: "Your dark store hub is now live in the neural mesh." });
       router.push('/darkstore/inventory');
@@ -140,6 +176,15 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onInvalid = (errors: any) => {
+    const errorMessages = Object.values(errors).map((e: any) => e.message || "Invalid input");
+    toast({
+      title: "Deployment Aborted",
+      description: errorMessages[0] || "Review operational parameters.",
+      variant: "destructive"
+    });
   };
 
   if (!mounted) return null;
@@ -152,7 +197,7 @@ export default function SignupPage() {
       </div>
 
       <div className="w-full max-w-5xl tactical-panel border-none shadow-2xl overflow-hidden relative z-10 backdrop-blur-sm">
-        <div className="flex flex-col md:flex-row min-h-[650px]">
+        <div className="flex flex-col md:flex-row min-h-[700px]">
           {/* Progress Sidebar */}
           <div className="w-full md:w-80 bg-[#060d1c] p-10 border-r border-white/5 space-y-12">
             <div className="flex items-center gap-4">
@@ -169,7 +214,8 @@ export default function SignupPage() {
               {[
                 { id: 1, label: 'OPERATOR', desc: 'Identity Protocol', icon: <User className="w-4 h-4" /> },
                 { id: 2, label: 'HUB CONFIG', desc: 'Node Coordinates', icon: <Store className="w-4 h-4" /> },
-                { id: 3, label: 'MATRIX INIT', desc: 'Operational Parameters', icon: <Cpu className="w-4 h-4" /> }
+                { id: 3, label: 'MESH INIT', desc: 'SKU Initialization', icon: <Package className="w-4 h-4" /> },
+                { id: 4, label: 'DEPLOY', desc: 'Final Calibration', icon: <Cpu className="w-4 h-4" /> }
               ].map((s) => (
                 <div key={s.id} className="flex items-center gap-5 relative">
                   <div className={cn(
@@ -183,22 +229,22 @@ export default function SignupPage() {
                     <p className={cn("text-[10px] font-headline tracking-widest uppercase", step === s.id ? "text-primary" : "text-muted-foreground/60")}>{s.label}</p>
                     <p className="text-[8px] font-mono text-muted-foreground/40 mt-1 uppercase tracking-tighter">{s.desc}</p>
                   </div>
-                  {s.id < 3 && <div className="absolute left-5 top-10 w-px h-8 bg-white/5" />}
+                  {s.id < 4 && <div className="absolute left-5 top-10 w-px h-8 bg-white/5" />}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Form Area */}
-          <div className="flex-1 p-8 md:p-16 overflow-y-auto max-h-[85vh] custom-scrollbar bg-black/40">
+          <div className="flex-1 p-8 md:p-12 overflow-y-auto max-h-[90vh] custom-scrollbar bg-black/40">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-10"
+                className="space-y-8"
               >
                 {step === 1 && (
                   <div className="space-y-8">
@@ -245,6 +291,53 @@ export default function SignupPage() {
                 )}
 
                 {step === 3 && (
+                  <div className="space-y-8">
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Mesh Initialization</h2>
+                      <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Enroll your starting SKUs. This activates the neural analytics layer.</p>
+                    </div>
+
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 bg-white/5 border border-white/5 rounded-sm relative group">
+                          {index > 0 && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => remove(index)}
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input placeholder="SKU NAME" {...register(`inventory.${index}.name` as const)} className="cyber-input" />
+                            <Input placeholder="SKU CODE (OPTIONAL)" {...register(`inventory.${index}.sku` as const)} className="cyber-input" />
+                            <div className="grid grid-cols-2 gap-4">
+                              <Input type="number" placeholder="STOCK" {...register(`inventory.${index}.currentStock` as const)} className="cyber-input" />
+                              <Input type="number" placeholder="REORDER PT" {...register(`inventory.${index}.reorderPoint` as const)} className="cyber-input" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <Input type="number" placeholder="COST PRICE ₹" {...register(`inventory.${index}.costPrice` as const)} className="cyber-input" />
+                              <Input type="number" placeholder="SELL PRICE ₹" {...register(`inventory.${index}.sellingPrice` as const)} className="cyber-input" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => append({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' })}
+                      className="w-full border-dashed border-primary/40 text-primary h-12 font-mono text-xs"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> ENROLL ADDITIONAL SKU
+                    </Button>
+                  </div>
+                )}
+
+                {step === 4 && (
                   <div className="space-y-8">
                     <div className="space-y-2">
                       <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Operational Matrix</h2>
@@ -298,9 +391,10 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                <div className="flex gap-4 pt-10 border-t border-white/5">
+                <div className="flex gap-4 pt-8 border-t border-white/5">
                   {step > 1 && (
                     <Button 
+                      type="button"
                       variant="outline" 
                       onClick={() => setStep(step - 1)} 
                       className="flex-1 h-14 font-headline text-xs tracking-widest uppercase border-white/10"
@@ -308,8 +402,9 @@ export default function SignupPage() {
                       <ArrowLeft className="w-4 h-4 mr-2" /> Back
                     </Button>
                   )}
-                  {step < 3 ? (
+                  {step < 4 ? (
                     <Button 
+                      type="button"
                       onClick={handleNext} 
                       className="flex-[2] h-14 font-headline text-xs tracking-widest uppercase bg-primary text-black glow-cyan"
                     >
@@ -317,7 +412,8 @@ export default function SignupPage() {
                     </Button>
                   ) : (
                     <Button 
-                      onClick={handleSubmit(onSubmit)} 
+                      type="button"
+                      onClick={handleSubmit(onSubmit, onInvalid)} 
                       disabled={loading || !formData.terms}
                       className="flex-[2] h-14 font-headline text-xs tracking-widest uppercase bg-secondary text-black shadow-[0_0_25px_rgba(0,255,136,0.3)]"
                     >
