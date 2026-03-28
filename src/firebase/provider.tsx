@@ -86,7 +86,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             });
           } catch (error: any) {
             console.warn("Error fetching user profile (retrying silently):", error.message);
-            // On failure, we still set the user so the app can attempt to function
             setUserAuthState({ 
               user: firebaseUser, 
               userProfile: null,
@@ -150,12 +149,12 @@ export const useAuth = (): Auth => useFirebase().auth;
 export const useFirestore = (): Firestore => useFirebase().firestore;
 export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp;
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T & {__memo?: boolean} {
-  const memoized = useMemo(factory, deps);
-  if(typeof memoized === 'object' && memoized !== null) {
-    (memoized as any).__memo = true;
-  }
-  return memoized as any;
+/**
+ * useMemoFirebase provides a stable reference for Firestore queries and references.
+ * Important: We no longer inject external properties into Firestore objects to prevent SDK assertion crashes.
+ */
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  return useMemo(factory, deps);
 }
 
 export const useUser = (): UserHookResult => {

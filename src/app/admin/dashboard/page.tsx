@@ -3,27 +3,21 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { collection, query, where } from 'firebase/firestore';
+import { Card, CardContent } from "@/components/ui/card";
 import { ActiveStoresGrid } from "@/components/admin/active-stores-grid";
 import { AiGlobalMonitor } from "@/components/admin/ai-global-monitor";
 import { PlatformActivityLogs } from "@/components/admin/platform-activity-logs";
 import { 
   ShieldAlert, 
-  Trash2, 
   Zap,
   Server,
-  Network,
   Activity,
   Globe,
-  Settings,
   Brain,
   Terminal,
-  TrendingUp,
-  Cpu
+  TrendingUp
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -40,15 +34,14 @@ const revData = [
 export default function AdminDashboard() {
   const { user, userProfile, isUserLoading } = useUser();
   const db = useFirestore();
-  const { toast } = useToast();
 
   const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
 
+  // Defensive query construction
   const storesQuery = useMemoFirebase(() => {
-    // Only fire query if user is identified and has admin privileges
     if (!user || !isMasterAdmin) return null; 
     return query(collection(db, 'users'), where('role', '==', 'store'));
-  }, [db, user, isMasterAdmin]);
+  }, [db, user?.uid, isMasterAdmin]);
 
   const { data: allStores, error, isLoading: isStoresLoading } = useCollection(storesQuery);
 
@@ -94,7 +87,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // Final guard: Ensure only admins see the dashboard content
   if (user && !isMasterAdmin) {
     return (
       <DashboardLayout>
@@ -109,7 +101,6 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-10">
-        {/* Header HUD */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(20,255,236,0.2)]">
@@ -132,7 +123,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Telemetry Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard label="Registered Hubs" value={stats.totalNodes} icon={<Server className="text-primary" />} color="primary" />
           <StatCard label="Online Nodes" value={stats.onlineNodes} icon={<Activity className="text-secondary animate-pulse" />} color="secondary" />
@@ -141,7 +131,6 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Matrix */}
           <div className="lg:col-span-2 space-y-10">
             <div className="space-y-4">
               <div className="flex items-center gap-4 mb-2">
@@ -160,7 +149,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Sidebar Modules */}
           <div className="space-y-10">
             <div className="space-y-4">
               <div className="flex items-center gap-4 mb-2">

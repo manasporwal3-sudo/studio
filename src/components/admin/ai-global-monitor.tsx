@@ -5,23 +5,30 @@ import { collectionGroup, query, where, limit, orderBy } from "firebase/firestor
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Brain, AlertCircle, Cpu, RefreshCw } from "lucide-react";
+import { AlertCircle, Cpu, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function AiGlobalMonitor() {
   const db = useFirestore();
   const { user, userProfile } = useUser();
 
+  const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
+
   const globalAtRiskQuery = useMemoFirebase(() => {
-    // Defensive check: Ensure user is an admin before firing collectionGroup query
-    if (!user || userProfile?.role !== 'admin') return null;
-    return query(
-      collectionGroup(db, 'inventory'),
-      where('currentStock', '<=', 5),
-      orderBy('currentStock', 'asc'),
-      limit(15)
-    );
-  }, [db, user, userProfile?.role]);
+    // strictly guard against premature query fire
+    if (!user?.uid || !isMasterAdmin) return null;
+    try {
+      return query(
+        collectionGroup(db, 'inventory'),
+        where('currentStock', '<=', 5),
+        orderBy('currentStock', 'asc'),
+        limit(15)
+      );
+    } catch (e) {
+      console.error("AI Monitor Query Error:", e);
+      return null;
+    }
+  }, [db, user?.uid, isMasterAdmin]);
 
   const { data: atRiskItems, isLoading } = useCollection(globalAtRiskQuery);
 
