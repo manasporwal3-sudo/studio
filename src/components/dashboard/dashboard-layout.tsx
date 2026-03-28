@@ -1,22 +1,21 @@
-
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
-  Brain, 
-  Database, 
-  TrendingUp, 
-  ShoppingCart, 
-  Sparkles, 
+  Shield, 
+  Zap, 
+  Radio, 
+  Network, 
+  Crosshair, 
+  Activity, 
   User as UserIcon, 
   LogOut,
   ChevronRight,
   Menu,
-  Zap,
-  MapPin,
-  DollarSign
+  Terminal,
+  Cpu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { STORES } from '@/lib/mock-data';
@@ -31,125 +30,115 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   
   const activeStoreId = searchParams.get('store') || STORES[0].id;
-  const activeStore = STORES.find(s => s.id === activeStoreId) || STORES[0];
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  const handleStoreChange = (storeId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('store', storeId);
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
   const navItems = [
-    { name: 'Live Control', icon: <Zap className="w-4 h-4" />, href: '/dashboard' },
-    { name: 'Inventory Brain', icon: <Database className="w-4 h-4" />, href: '/inventory' },
-    { name: 'Demand Oracle', icon: <TrendingUp className="w-4 h-4" />, href: '/trends' },
-    { name: 'Profit Engine', icon: <DollarSign className="w-4 h-4" />, href: '/profit' },
-    { name: 'AI Agent', icon: <Brain className="w-4 h-4" />, href: '/restock' },
-    { name: 'Neural Insights', icon: <Sparkles className="w-4 h-4" />, href: '/insights' },
-    { name: 'Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
+    { name: 'Command Center', icon: <Zap className="w-4 h-4" />, href: '/dashboard' },
+    { name: 'Store Onboarding', icon: <Radio className="w-4 h-4" />, href: '/onboarding' },
+    { name: 'Rider Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
+    { name: 'Instrument Cluster', icon: <Crosshair className="w-4 h-4" />, href: '/rider-cluster' },
+    { name: 'Predictive Brain', icon: <Cpu className="w-4 h-4" />, href: '/predictive' },
+    { name: 'Agent Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
 
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Brain className="w-8 h-8 text-primary animate-pulse" />
+        <Terminal className="w-8 h-8 text-primary animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Decorative Light Blooms */}
+      <div className="radial-bloom bg-primary/10 w-[600px] h-[600px] -top-48 -left-48" />
+      <div className="radial-bloom bg-accent/5 w-[400px] h-[400px] bottom-0 right-0" />
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 glass-panel hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center border border-primary/30">
-            <Brain className="w-5 h-5 text-primary" />
+      <aside className="w-64 border-r border-white/5 bg-black/40 backdrop-blur-2xl hidden md:flex flex-col sticky top-0 h-screen z-50">
+        <div className="p-8 flex items-center gap-4">
+          <div className="w-10 h-10 bg-primary/20 border border-primary/40 flex items-center justify-center">
+            <Shield className="w-6 h-6 text-primary" />
           </div>
-          <span className="font-bold tracking-tighter text-sm">NEURO-FAST</span>
-        </div>
-
-        <div className="px-4 mb-6">
-          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 px-2 tracking-widest">Active Nodes</p>
-          <div className="space-y-1">
-            {STORES.map(store => (
-              <button
-                key={store.id}
-                onClick={() => handleStoreChange(store.id)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all",
-                  activeStoreId === store.id 
-                    ? "bg-primary/20 text-primary border border-primary/20" 
-                    : "text-muted-foreground hover:bg-white/5"
-                )}
-              >
-                <MapPin className="w-3 h-3" />
-                {store.name}
-              </button>
-            ))}
+          <div>
+            <span className="font-headline font-extrabold tracking-tighter text-lg leading-none block">NEURO-FAST</span>
+            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">Tactical OS v4.0</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
-           <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 px-2 tracking-widest">Control Panels</p>
+        <nav className="flex-1 px-4 space-y-2 mt-8">
+          <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.2em] uppercase">Operation Modules</p>
           {navItems.map((item) => {
-            const hrefWithStore = `${item.href}?store=${activeStoreId}`;
+            const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={hrefWithStore}>
+              <Link key={item.href} href={`${item.href}?store=${activeStoreId}`}>
                 <div className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group",
-                  pathname === item.href 
-                    ? "bg-primary/20 text-primary border border-primary/20" 
+                  "flex items-center gap-3 px-4 py-3 transition-all group relative cursor-pointer",
+                  isActive 
+                    ? "bg-primary/10 text-primary" 
                     : "text-muted-foreground hover:bg-white/5 hover:text-white"
                 )}>
-                  {item.icon}
-                  {item.name}
-                  {pathname === item.href && <ChevronRight className="ml-auto w-3 h-3" />}
+                  {isActive && <div className="absolute left-0 top-0 w-1 h-full bg-primary shadow-[0_0_10px_rgba(20,255,236,1)]" />}
+                  <span className={cn("transition-transform duration-300 group-hover:scale-110", isActive && "text-primary glow-text-primary")}>
+                    {item.icon}
+                  </span>
+                  <span className="font-mono text-xs uppercase tracking-widest">{item.name}</span>
+                  {isActive && <ChevronRight className="ml-auto w-3 h-3 animate-pulse" />}
                 </div>
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        <div className="p-6 border-t border-white/5">
           <Button 
             variant="ghost" 
-            className="w-full text-[10px] uppercase font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+            className="w-full font-mono text-[10px] uppercase tracking-[0.2em] text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={() => auth.signOut()}
           >
-            <LogOut className="w-3 h-3 mr-2" /> Disconnect Node
+            <LogOut className="w-3 h-3 mr-2" /> Terminate Uplink
           </Button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center px-8 justify-between glass-panel sticky top-0 z-40">
-          <div className="flex items-center gap-4">
+      {/* Main View */}
+      <div className="flex-1 flex flex-col min-w-0 z-10">
+        <header className="h-20 border-b border-white/5 flex items-center px-12 justify-between bg-black/20 backdrop-blur-md sticky top-0 z-40">
+          <div className="flex items-center gap-6">
             <Menu className="w-5 h-5 md:hidden text-muted-foreground" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">{activeStore.id}</span>
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                {activeStore.name} // {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+            <div className="flex items-center gap-4">
+              <div className="px-3 py-1 bg-primary/10 border border-primary/30 rounded-sm">
+                <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest">Active Node: {activeStoreId}</span>
+              </div>
+              <h2 className="font-headline text-sm font-extrabold uppercase tracking-[0.2em] text-muted-foreground/60">
+                System_Link // <span className="text-foreground">{navItems.find(i => i.href === pathname)?.name || 'Command'}</span>
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-             <div className="flex flex-col items-end">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Global Pulse</span>
-              <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> 100% OPERATIONAL
-              </span>
+          
+          <div className="flex items-center gap-8">
+             <div className="text-right">
+              <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-[0.3em]">Network Latency</span>
+              <div className="text-xs font-mono text-secondary glow-text-secondary flex items-center justify-end gap-2">
+                <Activity className="w-3 h-3" /> 1.2MS / STABLE
+              </div>
+            </div>
+            <div className="h-8 w-px bg-white/5" />
+            <div className="w-8 h-8 border border-white/10 flex items-center justify-center relative">
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full animate-ping" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full" />
+              <Zap className="w-4 h-4 text-primary" />
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden">
+        <main className="flex-1 p-8 md:p-12 max-w-[1800px] mx-auto w-full">
           {children}
         </main>
       </div>
@@ -161,7 +150,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Brain className="w-8 h-8 text-primary animate-pulse" />
+        <Terminal className="w-8 h-8 text-primary animate-pulse" />
       </div>
     }>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>

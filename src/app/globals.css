@@ -4,31 +4,26 @@
 
 @layer base {
   :root {
-    --background: 221 49% 10%;
-    --foreground: 210 40% 96%;
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 96%;
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 215 34% 15%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 215 16% 45%;
-    --muted-foreground: 215 16% 65%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 217 91% 60%;
-    --radius: 0.75rem;
-    --chart-1: 217 91% 60%;
-    --chart-2: 161 84% 39%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 340 75% 55%;
+    --background: 224 71% 4%;
+    --foreground: 180 100% 97%;
+    --card: 224 71% 6%;
+    --card-foreground: 180 100% 97%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 180 100% 97%;
+    --primary: 174 100% 45%;
+    --primary-foreground: 180 100% 10%;
+    --secondary: 84 100% 59%;
+    --secondary-foreground: 180 100% 10%;
+    --muted: 224 30% 20%;
+    --muted-foreground: 180 20% 65%;
+    --accent: 38 100% 50%;
+    --accent-foreground: 180 100% 10%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 180 100% 97%;
+    --border: 180 100% 50% / 0.1;
+    --input: 180 100% 50% / 0.1;
+    --ring: 174 100% 45%;
+    --radius: 0rem;
   }
 }
 
@@ -37,30 +32,59 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased selection:bg-primary/30;
+    background-image: 
+      radial-gradient(circle at 50% 50%, hsla(174, 100%, 45%, 0.05), transparent 40%),
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 52px 52px, 52px 52px;
   }
 }
 
-.glass-panel {
-  @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-xl;
+.font-headline { font-family: 'Exo 2', sans-serif; }
+.font-mono { font-family: 'Share Tech Mono', monospace; }
+
+.tactical-panel {
+  @apply bg-card/40 backdrop-blur-xl border-l-2 border-primary/20 relative overflow-hidden;
+  box-shadow: 0 0 40px -10px rgba(0,0,0,0.5);
 }
 
-.status-indicator {
-  @apply w-2 h-2 rounded-full inline-block mr-2 animate-pulse;
+.tactical-panel::before {
+  content: '';
+  @apply absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_15px_rgba(20,255,236,0.8)];
 }
 
-.health-green { @apply bg-[#10b981]; }
-.health-amber { @apply bg-[#f59e0b]; }
-.health-red { @apply bg-[#ef4444]; }
+.glow-text-primary { text-shadow: 0 0 10px hsla(174, 100%, 45%, 0.5); }
+.glow-text-secondary { text-shadow: 0 0 10px hsla(84, 100% , 59%, 0.5); }
+.glow-text-accent { text-shadow: 0 0 10px hsla(38, 100% , 50%, 0.5); }
 
-/* Custom scrollbar for dark theme */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.scan-line {
+  @apply absolute left-0 w-full h-1 bg-primary/50 shadow-[0_0_20px_rgba(20,255,236,1)] z-10 pointer-events-none;
+  animation: scan 3s linear infinite;
 }
-::-webkit-scrollbar-track {
-  @apply bg-background;
+
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
-::-webkit-scrollbar-thumb {
-  @apply bg-muted/20 rounded-full hover:bg-muted/40 transition-colors;
+
+.radial-bloom {
+  @apply absolute rounded-full blur-[120px] pointer-events-none;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.pulse-node {
+  @apply relative flex items-center justify-center;
+}
+
+.pulse-node::after {
+  content: '';
+  @apply absolute w-full h-full rounded-full bg-primary;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
