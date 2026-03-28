@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ActiveStoresGrid } from "@/components/admin/active-stores-grid";
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
           <div>
             <h1 className="text-3xl font-black font-headline tracking-tighter uppercase italic text-white flex items-center gap-3">
-              <Globe className="w-8 h-8 text-primary glow-cyan" />
+              <Server className="w-8 h-8 text-primary glow-cyan" />
               Store Management
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold mt-2">
