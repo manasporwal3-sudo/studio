@@ -1,24 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/firebase';
 import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, ShieldCheck, Zap, Fingerprint, User, Key } from 'lucide-react';
+import { Fingerprint, User, Key, ShieldCheck, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { useEffect } from 'react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mounted, setMounted] = useState(false);
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     if (user) {
       router.push('/inventory');
     }
@@ -39,9 +40,19 @@ export default function LoginPage() {
     initiateEmailSignIn(auth, email, pass);
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <Fingerprint className="w-12 h-12 text-primary opacity-20" />
+          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Initializing Link...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden relative">
-      {/* Quantum Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/30 rounded-full blur-[160px] animate-pulse" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[160px] animate-pulse delay-700" />
@@ -95,7 +106,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Trial Access Section */}
           <div className="space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useUser, useAuth } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,6 +10,13 @@ import { User, Shield, Key, Clock, LogOut } from "lucide-react";
 export default function AccountPage() {
   const { user } = useUser();
   const auth = useAuth();
+  const [mounted, setMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date().toLocaleString());
+  }, []);
 
   return (
     <DashboardLayout>
@@ -51,7 +59,9 @@ export default function AccountPage() {
                 <Clock className="w-5 h-5 text-primary" />
                 <div className="flex-1">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Last Synchronization</p>
-                  <p className="text-sm font-mono">{new Date().toLocaleString()}</p>
+                  <p className="text-sm font-mono">
+                    {mounted ? currentTime : 'Syncing...'}
+                  </p>
                 </div>
               </div>
             </div>
