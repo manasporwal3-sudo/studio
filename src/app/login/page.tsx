@@ -6,7 +6,7 @@ import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fingerprint, User, Key, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
+import { Fingerprint, User, Key, ShieldCheck, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,7 @@ export default function LoginPage() {
     initiateEmailSignIn(auth, email, password).catch((error: any) => {
       toast({
         title: "Uplink Terminated",
-        description: "Invalid credentials. Ensure the agent node is registered in the Firebase Console.",
+        description: "Invalid credentials. Ensure the account is registered in your Firebase Console.",
         variant: "destructive",
       });
     });
@@ -54,7 +54,7 @@ export default function LoginPage() {
     initiateEmailSignIn(auth, email, pass).catch((error: any) => {
       toast({
         title: "Trial Link Failed",
-        description: "Credentials mismatch. Verify if 'Email/Password' is enabled in your Firebase Project.",
+        description: "Credentials mismatch. Verify if 'Email/Password' is enabled in your Firebase Project and these users exist.",
         variant: "destructive",
       });
     });
@@ -137,19 +137,19 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                onClick={() => quickAccess('agent.alpha@neurofast.ai', 'AlphaNode2024')}
+                onClick={() => quickAccess('admin@xyz.com', 'AdminPass2024')}
                 className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
               >
-                <span className="text-[10px] font-bold text-primary">AGENT ALPHA</span>
-                <span className="text-[8px] opacity-40 font-mono">AlphaNode2024</span>
+                <span className="text-[10px] font-bold text-primary">ADMIN ACCESS</span>
+                <span className="text-[8px] opacity-40 font-mono">AdminPass2024</span>
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => quickAccess('agent.beta@neurofast.ai', 'BetaNode2024')}
+                onClick={() => quickAccess('user@abc.com', 'UserPass2024')}
                 className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
               >
-                <span className="text-[10px] font-bold text-primary">AGENT BETA</span>
-                <span className="text-[8px] opacity-40 font-mono">BetaNode2024</span>
+                <span className="text-[10px] font-bold text-primary">USER ACCESS</span>
+                <span className="text-[8px] opacity-40 font-mono">UserPass2024</span>
               </Button>
             </div>
           </div>
