@@ -84,7 +84,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="font-mono text-[10px] uppercase text-muted-foreground tracking-widest">Auth Token</label>
-                  <Input type="password" value="******************" className="bg-black/40 border-white/10 font-mono text-xs h-12" />
+                  <Input type="password" value="******************" readOnly className="bg-black/40 border-white/10 font-mono text-xs h-12" />
                 </div>
                 <Button 
                   disabled={!selectedProto}
