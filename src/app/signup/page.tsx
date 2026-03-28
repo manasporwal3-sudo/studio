@@ -16,14 +16,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap, Package, Plus, Trash2 } from 'lucide-react';
+import { Shield, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap, Package, Plus, Trash2, Store, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(2, "Name required"),
   currentStock: z.coerce.number().min(0, "Stock cannot be negative"),
-  costPrice: z.coerce.number().min(0.01, "Cost required"),
-  sellingPrice: z.coerce.number().min(0.01, "Price required"),
+  costPrice: z.coerce.number().min(0.01, "Cost Price required"),
+  sellingPrice: z.coerce.number().min(0.01, "Selling Price required"),
   reorderPoint: z.coerce.number().min(1, "ROP required"),
 });
 
@@ -161,10 +161,10 @@ export default function SignupPage() {
 
             <div className="space-y-8">
               {[
-                { id: 1, label: 'IDENTITY', desc: 'Node Operator' },
-                { id: 2, label: 'HUB', desc: 'Geo-Coordinates' },
-                { id: 3, label: 'INVENTORY', desc: 'SKU Brain' },
-                { id: 4, label: 'AUTHORIZE', desc: 'Sovereign Key' }
+                { id: 1, label: 'IDENTITY', desc: 'Node Operator', icon: <User className="w-4 h-4" /> },
+                { id: 2, label: 'HUB', desc: 'Geo-Coordinates', icon: <Store className="w-4 h-4" /> },
+                { id: 3, label: 'INVENTORY', desc: 'SKU Brain', icon: <Package className="w-4 h-4" /> },
+                { id: 4, label: 'AUTHORIZE', desc: 'Sovereign Key', icon: <Zap className="w-4 h-4" /> }
               ].map((s) => (
                 <div key={s.id} className="flex items-center gap-4">
                   <div className={cn(
@@ -198,11 +198,11 @@ export default function SignupPage() {
                     <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Operator Identity</h2>
                     <div className="grid gap-4">
                       <Input placeholder="FULL NAME" {...register('fullName')} className="cyber-input" />
-                      <Input placeholder="MOBILE NUMBER" {...register('mobile')} className="cyber-input" />
+                      <Input placeholder="MOBILE NUMBER (+91)" {...register('mobile')} className="cyber-input" />
                       <Input type="email" placeholder="EMAIL ADDRESS" {...register('email')} className="cyber-input" />
                       <div className="grid grid-cols-2 gap-4">
-                        <Input type="password" placeholder="NEURAL KEY" {...register('password')} className="cyber-input" />
-                        <Input type="password" placeholder="CONFIRM KEY" {...register('confirmPassword')} className="cyber-input" />
+                        <Input type="password" placeholder="PASSWORD" {...register('password')} className="cyber-input" />
+                        <Input type="password" placeholder="CONFIRM" {...register('confirmPassword')} className="cyber-input" />
                       </div>
                     </div>
                   </div>
@@ -218,7 +218,7 @@ export default function SignupPage() {
                       </div>
                       <Textarea placeholder="FULL HUB ADDRESS" {...register('address')} className="cyber-input min-h-[80px]" />
                       <div className="grid grid-cols-2 gap-4">
-                        <Input placeholder="PIN CODE" {...register('pinCode')} className="cyber-input" />
+                        <Input placeholder="PIN CODE (6 DIGITS)" {...register('pinCode')} className="cyber-input" />
                         <Input placeholder="GST NUMBER (OPTIONAL)" {...register('gstNumber')} className="cyber-input" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -232,14 +232,14 @@ export default function SignupPage() {
                 {step === 3 && (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Initial Inventory</h2>
-                      <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 10 })} className="font-mono text-[10px]">
+                      <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Initial Inventory Brain</h2>
+                      <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 10 })} className="font-mono text-[10px] border-primary/20 text-primary hover:bg-primary/5">
                         <Plus className="w-3 h-3 mr-1" /> ADD SKU
                       </Button>
                     </div>
                     <div className="space-y-4">
                       {fields.map((field, index) => (
-                        <div key={field.id} className="p-4 border border-white/5 bg-white/5 space-y-4 relative group">
+                        <div key={field.id} className="p-4 border border-white/5 bg-white/5 space-y-4 relative group rounded-lg">
                           {fields.length > 1 && (
                             <Button 
                               type="button" 
@@ -251,23 +251,23 @@ export default function SignupPage() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
-                          <Input placeholder="SKU NAME" {...register(`initialInventory.${index}.name`)} className="cyber-input" />
+                          <Input placeholder="SKU NAME (e.g., Organic Milk 1L)" {...register(`initialInventory.${index}.name`)} className="cyber-input" />
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Stock</label>
-                              <Input type="number" {...register(`initialInventory.${index}.currentStock`)} className="cyber-input h-8" />
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest">Stock Level</label>
+                              <Input type="number" {...register(`initialInventory.${index}.currentStock`)} className="cyber-input h-9" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Cost (₹)</label>
-                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.costPrice`)} className="cyber-input h-8" />
+                              <label className="text-[8px] font-mono text-primary uppercase tracking-widest">Cost Price (₹)</label>
+                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.costPrice`)} className="cyber-input h-9 border-primary/20" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Price (₹)</label>
-                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.sellingPrice`)} className="cyber-input h-8" />
+                              <label className="text-[8px] font-mono text-secondary uppercase tracking-widest">Selling Price (₹)</label>
+                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.sellingPrice`)} className="cyber-input h-9 border-secondary/20" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[8px] font-mono text-muted-foreground uppercase">ROP</label>
-                              <Input type="number" {...register(`initialInventory.${index}.reorderPoint`)} className="cyber-input h-8" />
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest">Reorder Pt</label>
+                              <Input type="number" {...register(`initialInventory.${index}.reorderPoint`)} className="cyber-input h-9" />
                             </div>
                           </div>
                         </div>
@@ -280,19 +280,19 @@ export default function SignupPage() {
                 {step === 4 && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Deployment Protocol</h2>
-                    <Card className="bg-white/5 border-white/5 p-6 space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-[10px] font-mono uppercase">
-                        <div><p className="text-muted-foreground">Manager</p><p className="text-primary">{formData.fullName}</p></div>
-                        <div><p className="text-muted-foreground">Hub</p><p className="text-primary">{formData.storeName}</p></div>
-                        <div><p className="text-muted-foreground">Inventory</p><p className="text-primary">{formData.initialInventory.length} SKUs READY</p></div>
-                        <div><p className="text-muted-foreground">Status</p><p className="text-secondary">READY FOR UPLINK</p></div>
+                    <Card className="bg-primary/5 border-primary/20 p-6 space-y-4 rounded-xl">
+                      <div className="grid grid-cols-2 gap-6 text-[10px] font-mono uppercase">
+                        <div><p className="text-muted-foreground mb-1">Node Manager</p><p className="text-primary font-bold">{formData.fullName}</p></div>
+                        <div><p className="text-muted-foreground mb-1">Hub Location</p><p className="text-primary font-bold">{formData.storeName} ({formData.city})</p></div>
+                        <div><p className="text-muted-foreground mb-1">Neural Mesh</p><p className="text-secondary font-bold">{formData.initialInventory.length} SKUs COMMITTED</p></div>
+                        <div><p className="text-muted-foreground mb-1">Link Status</p><p className="text-secondary animate-pulse">READY FOR UPLINK</p></div>
                       </div>
                     </Card>
 
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="terms" checked={formData.terms} onCheckedChange={(v) => setValue('terms', v as boolean)} />
-                      <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer">
-                        Accept Sovereign Node Operating Terms
+                    <div className="flex items-center space-x-3 p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <Checkbox id="terms" checked={formData.terms} onCheckedChange={(v) => setValue('terms', v as boolean)} className="border-primary" />
+                      <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer leading-tight">
+                        I authorize NEURO-FAST to manage inventory telemetry and acknowledge the Sovereign Node Operating Terms.
                       </label>
                     </div>
                   </div>
@@ -300,21 +300,21 @@ export default function SignupPage() {
 
                 <div className="flex gap-4 pt-8">
                   {step > 1 && (
-                    <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1 h-12 font-headline text-[10px] tracking-widest uppercase">
-                      <ArrowLeft className="w-4 h-4 mr-2" /> Revert
+                    <Button variant="ghost" onClick={() => setStep(step - 1)} className="flex-1 h-12 font-headline text-[10px] tracking-widest uppercase border border-white/10">
+                      <ArrowLeft className="w-4 h-4 mr-2" /> Previous
                     </Button>
                   )}
                   {step < 4 ? (
-                    <Button onClick={handleNext} className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-primary text-black hover:bg-primary/80">
-                      Synchronize <ArrowRight className="w-4 h-4 ml-2" />
+                    <Button onClick={handleNext} className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-primary text-black hover:bg-primary/80 shadow-[0_0_20px_rgba(0,212,255,0.3)]">
+                      Synchronize Node <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   ) : (
                     <Button 
                       onClick={handleSubmit(onSubmit)} 
                       disabled={loading || !formData.terms}
-                      className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-secondary text-black hover:bg-secondary/80"
+                      className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-secondary text-black hover:bg-secondary/80 shadow-[0_0_20px_rgba(0,255,136,0.3)]"
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-2" /> Deploy Hub Node</>}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-2" /> Finalize Deployment</>}
                     </Button>
                   )}
                 </div>
