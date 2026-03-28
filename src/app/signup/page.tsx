@@ -17,7 +17,6 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import Papa from 'papaparse';
 import { 
   Shield, 
   Store, 
@@ -30,8 +29,7 @@ import {
   Cpu,
   Package,
   Plus,
-  Trash2,
-  FileSpreadsheet
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -76,7 +74,6 @@ export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
@@ -124,18 +121,18 @@ export default function SignupPage() {
       fieldsToValidate = ['inventory'];
     }
     
-    // Explicitly validate password match if in step 1
-    if (step === 1 && passwordValue !== confirmPasswordValue) {
-      toast({
-        title: "Security Mismatch",
-        description: "Neural Keys (passwords) do not match.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const isValid = await trigger(fieldsToValidate as any);
+    
     if (isValid) {
+      // Manual secondary check for password mismatch to be 100% sure
+      if (step === 1 && passwordValue !== confirmPasswordValue) {
+        toast({
+          title: "Security Mismatch",
+          description: "Neural Keys (passwords) do not match. Validation lock engaged.",
+          variant: "destructive"
+        });
+        return;
+      }
       setStep(step + 1);
     } else {
       const firstError = Object.keys(errors).find(k => fieldsToValidate.includes(k as any));
@@ -146,37 +143,6 @@ export default function SignupPage() {
         variant: "destructive"
       });
     }
-  };
-
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const parsedData = results.data.map((row: any) => ({
-          name: row.Name || row.name || "",
-          sku: row.SKU || row.sku || "",
-          currentStock: Number(row.Stock || row.currentStock || 0),
-          reorderPoint: Number(row["Reorder Point"] || row.reorderPoint || 5),
-          costPrice: Number(row["Cost Price"] || row.costPrice || 0),
-          sellingPrice: Number(row["Selling Price"] || row.sellingPrice || 0),
-        })).filter(item => item.name);
-        
-        if (parsedData.length > 0) {
-          if (fields.length === 1 && !fields[0].name) {
-            remove(0);
-          }
-          parsedData.forEach(item => append(item));
-          toast({ 
-            title: "Bulk Mesh Uplink Ready", 
-            description: `${parsedData.length} SKUs prepared for node integration.` 
-          });
-        }
-      }
-    });
   };
 
   const onSubmit = async (data: SignupFormValues) => {
@@ -339,24 +305,7 @@ export default function SignupPage() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="space-y-1">
                         <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Mesh Initialization</h2>
-                        <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Upload spreadsheet or manual enrollment.</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <input 
-                          type="file" 
-                          accept=".csv" 
-                          className="hidden" 
-                          ref={fileInputRef} 
-                          onChange={handleCsvUpload} 
-                        />
-                        <Button 
-                          type="button" 
-                          onClick={() => fileInputRef.current?.click()}
-                          className="bg-secondary/20 text-secondary border border-secondary/30 font-mono text-[9px] tracking-widest uppercase hover:bg-secondary/40"
-                        >
-                          <FileSpreadsheet className="w-3 h-3 mr-2" />
-                          BULK UPLINK (.CSV)
-                        </Button>
+                        <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Manual SKU enrollment for node baseline.</p>
                       </div>
                     </div>
 
