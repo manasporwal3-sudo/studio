@@ -19,7 +19,8 @@ import {
   Loader2,
   Package,
   LayoutDashboard,
-  Globe
+  Globe,
+  Server
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -30,8 +31,8 @@ import { FloatingChatbot } from './floating-chatbot';
 function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string, activeStoreId: string, pathname: string, onItemClick?: () => void }) {
   // ADMIN-ONLY SIDEBAR (GOD MODE)
   const adminItems = [
-    { name: 'Active Stores', icon: <LayoutDashboard className="w-4 h-4" />, href: '/admin/dashboard' },
-    { name: 'Network Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
+    { name: 'Store Management', icon: <Globe className="w-4 h-4" />, href: '/admin/dashboard' },
+    { name: 'Fleet Matrix', icon: <Network className="w-4 h-4" />, href: '/riders' },
     { name: 'Sovereign Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
 
@@ -80,7 +81,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
   const activeStoreId = searchParams.get('store') || 'PRIMARY-NODE';
@@ -141,7 +142,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 z-10 w-full relative">
         <header className="h-20 border-b border-white/5 flex items-center px-6 md:px-16 justify-between bg-[#060d1c]/40 backdrop-blur-md sticky top-0 z-40">
           <div className="flex items-center gap-6">
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden text-muted-foreground hover:text-primary">
                   <Menu className="w-6 h-6" />
@@ -158,7 +159,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                   </div>
                 </SheetHeader>
                 <div className="flex-1 px-4 py-8 overflow-y-auto">
-                  <NavLinks role={role} activeStoreId={activeStoreId} pathname={pathname} onItemClick={() => setIsMobileMenuOpen(false)} />
+                  <NavLinks role={role} activeStoreId={activeStoreId} pathname={pathname} onItemClick={() => setIsMobileOpen(false)} />
                 </div>
               </SheetContent>
             </Sheet>
