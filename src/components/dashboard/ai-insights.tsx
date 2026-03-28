@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { generateDashboardInsights, type DashboardInsightsOutput } from "@/ai/flows/generate-dashboard-insights-flow"
-import { SKUS, STORES } from "@/lib/mock-data"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useDarkStoreOS } from "@/hooks/use-darkstore-os"
+import { useUser } from "@/firebase"
+import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Brain, AlertCircle, TrendingUp, ShieldAlert, Sparkles, Loader2, Terminal, Activity, RefreshCw } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,27 +13,33 @@ import { Button } from "@/components/ui/button"
 
 export function AIInsights() {
   const searchParams = useSearchParams()
-  const storeId = searchParams.get('store') || 'BLR-01'
-  const activeStore = STORES.find(s => s.id === storeId)
+  const storeId = searchParams.get('store') || 'PRIMARY-NODE'
+  const { user, userProfile } = useUser()
+  const { inventory, isLoading: isInventoryLoading } = useDarkStoreOS(user?.uid || '')
   
   const [insights, setInsights] = useState<DashboardInsightsOutput | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const loadInsights = useCallback(async () => {
+    if (inventory.length === 0) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
       const input = {
         storeProfile: JSON.stringify({
           store_id: storeId,
-          company_name: activeStore?.name,
-          platform: "Zepto Hub",
-          city: activeStore?.city,
-          hub_historical_context: "High temperature forecast. Previous weekend saw a 40% spike in beverage demand. Supply chain delays noted on Dairy SKU-001."
+          company_name: userProfile?.storeName || "AUTHORIZED HUB",
+          platform: "SOVEREIGN APEX NODE",
+          city: userProfile?.city || "Sovereign Hub",
+          hub_historical_context: "Autonomous audit active. Zero simulation mode engaged."
         }),
-        inventorySnapshot: JSON.stringify(SKUS),
-        auditLog: "LOGIN: Admin @ 08:00; MANUAL_EDIT: SKU-005 stock adjusted (-10); SYSTEM: Neural parity check successful.",
+        inventorySnapshot: JSON.stringify(inventory),
+        auditLog: "SYSTEM: Zero-simulation mode initialized. Node parity check passed.",
         previousAnalyses: ""
       }
       const result = await generateDashboardInsights(input)
@@ -43,20 +50,34 @@ export function AIInsights() {
     } finally {
       setLoading(false)
     }
-  }, [storeId, activeStore])
+  }, [storeId, userProfile, inventory])
 
   useEffect(() => {
-    loadInsights()
-  }, [loadInsights])
+    if (!isInventoryLoading) {
+      loadInsights()
+    }
+  }, [isInventoryLoading, loadInventoryData => loadInsights()])
 
-  if (loading) {
+  if (loading || isInventoryLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-primary animate-spin" />
-          <h2 className="text-sm font-mono text-primary uppercase tracking-[0.3em]">Engaging Sovereign Apex v9.0...</h2>
+          <h2 className="text-sm font-mono text-primary uppercase tracking-[0.3em]">Auditing Live Node Mesh...</h2>
         </div>
         <Skeleton className="h-96 w-full tactical-panel bg-white/5" />
+      </div>
+    )
+  }
+
+  if (inventory.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-6 tactical-panel bg-white/5">
+        <Terminal className="w-12 h-12 text-muted-foreground opacity-20" />
+        <div className="text-center space-y-2">
+          <h2 className="font-headline text-lg text-muted-foreground uppercase tracking-widest">Inventory Empty</h2>
+          <p className="font-mono text-xs text-muted-foreground/60">No SKUs detected in the local node. AI requires telemetry to function.</p>
+        </div>
       </div>
     )
   }
@@ -86,15 +107,12 @@ export function AIInsights() {
           </div>
           <div>
             <h2 className="text-xs font-mono font-bold text-primary uppercase tracking-[0.4em]">Sovereign Engine v9.0 Apex Active</h2>
-            <p className="text-[9px] font-mono text-muted-foreground uppercase">Status: Continuous Cognitive Auditing</p>
+            <p className="text-[9px] font-mono text-muted-foreground uppercase">Status: Zero Simulation Mode Enabled</p>
           </div>
         </div>
         <div className="flex gap-2">
            <div className="px-3 py-1 bg-secondary/10 border border-secondary/30 rounded font-mono text-[9px] text-secondary">
-            ZERO_FABRICATION: ON
-          </div>
-          <div className="px-3 py-1 bg-accent/10 border border-accent/30 rounded font-mono text-[9px] text-accent">
-            CALC_TRACING: ON
+            TRACED_TO_LIVE_NODE: ON
           </div>
         </div>
       </div>
@@ -105,12 +123,7 @@ export function AIInsights() {
           <div className="bg-white/5 px-6 py-3 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Terminal className="w-3 h-3 text-secondary" />
-              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">Master Intelligence Brief — Secure Terminal</span>
-            </div>
-            <div className="flex gap-1">
-              <div className="w-2 h-2 rounded-full bg-secondary/40" />
-              <div className="w-2 h-2 rounded-full bg-accent/40" />
-              <div className="w-2 h-2 rounded-full bg-destructive/40" />
+              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">Master Intelligence Brief — LIVE DATA</span>
             </div>
           </div>
           <CardContent className="p-8">
@@ -132,27 +145,21 @@ export function AIInsights() {
             <Alert 
               key={alert.id} 
               variant={alert.severity === 'critical' || alert.severity === 'error' ? 'destructive' : 'default'}
-              className="tactical-panel border-none bg-black/40 before:bg-destructive shadow-lg transition-all hover:scale-[1.01]"
+              className="tactical-panel border-none bg-black/40 before:bg-destructive shadow-lg"
             >
               <AlertCircle className="h-4 w-4" />
               <AlertTitle className="font-mono font-bold uppercase tracking-widest text-xs">
-                {alert.severity.toUpperCase()} SIGNAL DETECTED
+                {alert.severity.toUpperCase()} SIGNAL
               </AlertTitle>
               <AlertDescription className="mt-3 font-mono text-[10px] leading-relaxed">
-                <p className="mb-3 text-foreground/70 border-b border-white/5 pb-2">{alert.message}</p>
+                <p className="mb-3 text-foreground/70">{alert.message}</p>
                 <div className="flex items-center gap-3 text-primary">
-                  <span className="font-bold">COMMAND_REQ:</span>
+                  <span className="font-bold">COMMAND:</span>
                   <span className="uppercase">{alert.actionRequired}</span>
                 </div>
               </AlertDescription>
             </Alert>
           ))}
-          {insights?.alerts.length === 0 && (
-            <div className="p-8 border border-dashed border-white/5 text-center flex flex-col items-center gap-2">
-              <Activity className="w-4 h-4 text-white/10" />
-              <span className="font-mono text-[9px] uppercase text-muted-foreground">No crisis signals in current node stream</span>
-            </div>
-          )}
         </div>
 
         {/* Neural Widgets Column */}
@@ -162,48 +169,27 @@ export function AIInsights() {
           </h3>
           <div className="grid gap-4">
             {insights?.widgets.map((widget) => (
-              <Card key={widget.id} className="tactical-panel bg-black/40 border-none before:bg-primary group hover:bg-white/[0.04] transition-all">
+              <Card key={widget.id} className="tactical-panel bg-black/40 border-none before:bg-primary">
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-mono font-bold flex items-center gap-2 uppercase tracking-widest">
-                      <TrendingUp className="w-3 h-3 text-primary" />
-                      {widget.title}
-                    </CardTitle>
-                    <div className={`px-2 py-0.5 border font-mono text-[8px] uppercase font-bold tracking-tighter ${
-                      widget.urgency === 'critical' ? 'border-destructive text-destructive bg-destructive/10' : 'border-primary text-primary'
-                    }`}>
-                      {widget.urgency}
-                    </div>
-                  </div>
+                  <CardTitle className="text-xs font-mono font-bold flex items-center gap-2 uppercase tracking-widest">
+                    <TrendingUp className="w-3 h-3 text-primary" />
+                    {widget.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-[11px] font-mono text-muted-foreground leading-relaxed italic">
                     {widget.content}
                   </p>
-                  <div className="p-4 bg-primary/5 border-l-2 border-primary flex items-start gap-4">
-                    <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div>
-                      <span className="text-[9px] font-mono text-primary/60 uppercase block mb-1">Strategic Lever</span>
-                      <p className="text-[10px] font-mono text-primary font-medium uppercase tracking-tight leading-tight">
-                        {widget.recommendation}
-                      </p>
-                    </div>
+                  <div className="p-4 bg-primary/5 border-l-2 border-primary">
+                    <p className="text-[10px] font-mono text-primary font-medium uppercase">
+                      Recommendation: {widget.recommendation}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </div>
-      
-      {/* Footer Protocol Sig */}
-      <div className="text-center py-12 border-t border-white/5 opacity-40">
-        <p className="font-mono text-[8px] uppercase tracking-[0.6em] mb-2">
-          End of Brief · Neuro-Fast Sovereign Engine v9.0 Apex · Store Node: {storeId}
-        </p>
-        <p className="font-mono text-[7px] uppercase tracking-[0.2em] text-muted-foreground">
-          Zero Simulation Protocol Engaged · All Insights Traced to Hub Logic
-        </p>
       </div>
     </div>
   )

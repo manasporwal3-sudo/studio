@@ -1,24 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap } from 'lucide-react';
+import { Shield, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap, Package, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const inventoryItemSchema = z.object({
+  name: z.string().min(2, "Name required"),
+  currentStock: z.coerce.number().min(0, "Stock cannot be negative"),
+  costPrice: z.coerce.number().min(0.01, "Cost required"),
+  sellingPrice: z.coerce.number().min(0.01, "Price required"),
+  reorderPoint: z.coerce.number().min(1, "ROP required"),
+});
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Name required"),
@@ -31,9 +38,9 @@ const signupSchema = z.object({
   address: z.string().min(10, "Address too short"),
   pinCode: z.string().length(6, "PIN must be 6 digits"),
   gstNumber: z.string().max(15).optional().or(z.literal('')),
-  category: z.string().min(1, "Select category"),
   expectedOrders: z.coerce.number().min(1, "Daily orders required"),
   outletsCount: z.coerce.number().min(1, "Outlets count required"),
+  initialInventory: z.array(inventoryItemSchema).min(1, "Add at least one SKU"),
   plan: z.enum(["Free", "Pro"]),
   terms: z.boolean().refine(val => val === true, "Must accept terms")
 }).refine(data => data.password === data.confirmPassword, {
@@ -56,30 +63,29 @@ export default function SignupPage() {
     setMounted(true);
   }, []);
 
-  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<SignupFormValues>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, trigger, control } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: { 
       plan: 'Free', 
       terms: false,
-      category: '',
       expectedOrders: 0,
-      outletsCount: 1
+      outletsCount: 1,
+      initialInventory: [{ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 10 }]
     }
   });
 
-  // Manually register fields that don't have standard inputs
-  useEffect(() => {
-    register('category');
-    register('plan');
-    register('terms');
-  }, [register]);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "initialInventory"
+  });
 
   const formData = watch();
 
   const handleNext = async () => {
-    let fieldsToValidate: (keyof SignupFormValues)[] = [];
+    let fieldsToValidate: any[] = [];
     if (step === 1) fieldsToValidate = ['fullName', 'mobile', 'email', 'password', 'confirmPassword'];
-    if (step === 2) fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'category', 'expectedOrders', 'outletsCount'];
+    if (step === 2) fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'expectedOrders', 'outletsCount'];
+    if (step === 3) fieldsToValidate = ['initialInventory'];
     
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
@@ -87,8 +93,8 @@ export default function SignupPage() {
     } else {
       toast({
         variant: "destructive",
-        title: "Validation Error",
-        description: "Please complete all tactical fields correctly.",
+        title: "Deployment Gap Detected",
+        description: "Complete all tactical parameters before proceeding.",
       });
     }
   };
@@ -110,62 +116,57 @@ export default function SignupPage() {
         gstNumber: data.gstNumber,
         expectedDailyOrders: data.expectedOrders,
         outletsCount: data.outletsCount,
-        roleIds: ['owner'],
+        roleIds: ['darkstore'],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
+      // Create Store Profile
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
       
-      toast({ title: "Registration Successful", description: "Welcome to Neuro-Fast Sovereign." });
-      router.push('/dashboard');
+      // Initialize Inventory Mesh
+      data.initialInventory.forEach(item => {
+        addDocumentNonBlocking(collection(db, 'users', user.uid, 'inventory'), {
+          ...item,
+          category: 'General',
+          addedAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        });
+      });
+      
+      toast({ title: "Node Initialized", description: "Your dark store is now live on the Sovereign Mesh." });
+      router.push('/darkstore/inventory');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Registration Failed", description: error.message });
+      toast({ variant: "destructive", title: "Uplink Failed", description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const onInvalid = (errors: any) => {
-    console.error("Form Validation Errors:", errors);
-    toast({
-      variant: "destructive",
-      title: "Uplink Denied",
-      description: "Ensure all parameters are valid before initialization.",
-    });
-  };
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden relative">
-      <div className="w-full max-w-4xl cyber-panel border-none shadow-2xl backdrop-blur-2xl">
-        <div className="flex flex-col md:flex-row min-h-[600px]">
-          {/* Sidebar / Progress */}
-          <div className="w-full md:w-1/3 bg-black/40 p-8 border-r border-white/5 space-y-12">
+      <div className="w-full max-w-5xl cyber-panel border-none shadow-2xl backdrop-blur-2xl">
+        <div className="flex flex-col md:flex-row min-h-[700px]">
+          {/* Sidebar */}
+          <div className="w-full md:w-1/4 bg-black/40 p-8 border-r border-white/5 space-y-12">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                <Shield className="text-primary w-6 h-6" />
-              </div>
+              <Shield className="text-primary w-8 h-8" />
               <div>
                 <h1 className="font-headline text-lg tracking-tighter">NEURO·FAST</h1>
-                <p className="text-[10px] font-mono text-primary/60 uppercase">Node Deployment v9.0</p>
+                <p className="text-[10px] font-mono text-primary/60 uppercase">Apex v9.0 Deploy</p>
               </div>
             </div>
 
             <div className="space-y-8">
               {[
-                { id: 1, label: 'OWNER', desc: 'Identify Identity' },
-                { id: 2, label: 'STORE', desc: 'Hub Configuration' },
-                { id: 3, label: 'CONFIRM', desc: 'Neural Authorization' }
+                { id: 1, label: 'IDENTITY', desc: 'Node Operator' },
+                { id: 2, label: 'HUB', desc: 'Geo-Coordinates' },
+                { id: 3, label: 'INVENTORY', desc: 'SKU Brain' },
+                { id: 4, label: 'AUTHORIZE', desc: 'Sovereign Key' }
               ].map((s) => (
-                <div key={s.id} className="flex items-center gap-4 group">
+                <div key={s.id} className="flex items-center gap-4">
                   <div className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center font-mono text-xs border transition-all",
                     step === s.id ? "bg-primary border-primary text-black glow-cyan" : 
@@ -173,17 +174,17 @@ export default function SignupPage() {
                   )}>
                     {step > s.id ? <CheckCircle2 className="w-4 h-4" /> : s.id}
                   </div>
-                  <div>
+                  <div className="hidden lg:block">
                     <p className={cn("text-xs font-headline tracking-widest", step === s.id ? "text-primary" : "text-muted-foreground")}>{s.label}</p>
-                    <p className="text-[9px] font-mono text-muted-foreground/40">{s.desc}</p>
+                    <p className="text-[8px] font-mono text-muted-foreground/40">{s.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Form Area */}
-          <div className="flex-1 p-8 md:p-12">
+          {/* Form */}
+          <div className="flex-1 p-8 md:p-12 overflow-y-auto max-h-[90vh]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -194,29 +195,14 @@ export default function SignupPage() {
               >
                 {step === 1 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Owner Registration</h2>
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Operator Identity</h2>
                     <div className="grid gap-4">
-                      <div className="space-y-1">
-                        <Input placeholder="FULL NAME" {...register('fullName')} className="cyber-input" />
-                        {errors.fullName && <p className="text-[10px] text-destructive font-mono">{errors.fullName.message}</p>}
-                      </div>
-                      <div className="space-y-1">
-                        <Input placeholder="MOBILE NUMBER (+91)" {...register('mobile')} className="cyber-input" />
-                        {errors.mobile && <p className="text-[10px] text-destructive font-mono">{errors.mobile.message}</p>}
-                      </div>
-                      <div className="space-y-1">
-                        <Input type="email" placeholder="EMAIL ADDRESS" {...register('email')} className="cyber-input" />
-                        {errors.email && <p className="text-[10px] text-destructive font-mono">{errors.email.message}</p>}
-                      </div>
+                      <Input placeholder="FULL NAME" {...register('fullName')} className="cyber-input" />
+                      <Input placeholder="MOBILE NUMBER" {...register('mobile')} className="cyber-input" />
+                      <Input type="email" placeholder="EMAIL ADDRESS" {...register('email')} className="cyber-input" />
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Input type="password" placeholder="PASSWORD" {...register('password')} className="cyber-input" />
-                          {errors.password && <p className="text-[10px] text-destructive font-mono">{errors.password.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Input type="password" placeholder="CONFIRM" {...register('confirmPassword')} className="cyber-input" />
-                          {errors.confirmPassword && <p className="text-[10px] text-destructive font-mono">{errors.confirmPassword.message}</p>}
-                        </div>
+                        <Input type="password" placeholder="NEURAL KEY" {...register('password')} className="cyber-input" />
+                        <Input type="password" placeholder="CONFIRM KEY" {...register('confirmPassword')} className="cyber-input" />
                       </div>
                     </div>
                   </div>
@@ -224,54 +210,20 @@ export default function SignupPage() {
 
                 {step === 2 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Store Telemetry</h2>
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Hub Coordinates</h2>
                     <div className="grid gap-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Input placeholder="STORE NAME" {...register('storeName')} className="cyber-input" />
-                          {errors.storeName && <p className="text-[10px] text-destructive font-mono">{errors.storeName.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Input placeholder="CITY" {...register('city')} className="cyber-input" />
-                          {errors.city && <p className="text-[10px] text-destructive font-mono">{errors.city.message}</p>}
-                        </div>
+                        <Input placeholder="STORE NAME" {...register('storeName')} className="cyber-input" />
+                        <Input placeholder="CITY" {...register('city')} className="cyber-input" />
                       </div>
-                      <div className="space-y-1">
-                        <Textarea placeholder="FULL ADDRESS" {...register('address')} className="cyber-input min-h-[80px]" />
-                        {errors.address && <p className="text-[10px] text-destructive font-mono">{errors.address.message}</p>}
+                      <Textarea placeholder="FULL HUB ADDRESS" {...register('address')} className="cyber-input min-h-[80px]" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input placeholder="PIN CODE" {...register('pinCode')} className="cyber-input" />
+                        <Input placeholder="GST NUMBER (OPTIONAL)" {...register('gstNumber')} className="cyber-input" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Input placeholder="PIN CODE" {...register('pinCode')} className="cyber-input" />
-                          {errors.pinCode && <p className="text-[10px] text-destructive font-mono">{errors.pinCode.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Input placeholder="GST NUMBER (OPTIONAL)" {...register('gstNumber')} className="cyber-input" />
-                          {errors.gstNumber && <p className="text-[10px] text-destructive font-mono">{errors.gstNumber.message}</p>}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                          <Select onValueChange={(val) => setValue('category', val, { shouldValidate: true })} value={formData.category}>
-                            <SelectTrigger className="cyber-input">
-                              <SelectValue placeholder="CATEGORY" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-card border-primary/20">
-                              {["Grocery", "Pharmacy", "Bakery", "Electronics", "Kirana", "Fruits & Veg"].map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat.toUpperCase()}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {errors.category && <p className="text-[10px] text-destructive font-mono">{errors.category.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Input type="number" placeholder="DAILY ORDERS" {...register('expectedOrders')} className="cyber-input" />
-                          {errors.expectedOrders && <p className="text-[10px] text-destructive font-mono">{errors.expectedOrders.message}</p>}
-                        </div>
-                        <div className="space-y-1">
-                          <Input type="number" placeholder="OUTLETS" {...register('outletsCount')} className="cyber-input" />
-                          {errors.outletsCount && <p className="text-[10px] text-destructive font-mono">{errors.outletsCount.message}</p>}
-                        </div>
+                        <Input type="number" placeholder="EXPECTED DAILY ORDERS" {...register('expectedOrders')} className="cyber-input" />
+                        <Input type="number" placeholder="OUTLETS" {...register('outletsCount')} className="cyber-input" />
                       </div>
                     </div>
                   </div>
@@ -279,66 +231,90 @@ export default function SignupPage() {
 
                 {step === 3 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Neural Confirmation</h2>
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Initial Inventory</h2>
+                      <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 10 })} className="font-mono text-[10px]">
+                        <Plus className="w-3 h-3 mr-1" /> ADD SKU
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 border border-white/5 bg-white/5 space-y-4 relative group">
+                          {fields.length > 1 && (
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="absolute top-2 right-2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => remove(index)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Input placeholder="SKU NAME" {...register(`initialInventory.${index}.name`)} className="cyber-input" />
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Stock</label>
+                              <Input type="number" {...register(`initialInventory.${index}.currentStock`)} className="cyber-input h-8" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Cost (₹)</label>
+                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.costPrice`)} className="cyber-input h-8" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase">Price (₹)</label>
+                              <Input type="number" step="0.01" {...register(`initialInventory.${index}.sellingPrice`)} className="cyber-input h-8" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-mono text-muted-foreground uppercase">ROP</label>
+                              <Input type="number" {...register(`initialInventory.${index}.reorderPoint`)} className="cyber-input h-8" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {errors.initialInventory && <p className="text-[10px] text-destructive font-mono">{errors.initialInventory.message}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {step === 4 && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Deployment Protocol</h2>
                     <Card className="bg-white/5 border-white/5 p-6 space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-[10px] font-mono uppercase">
                         <div><p className="text-muted-foreground">Manager</p><p className="text-primary">{formData.fullName}</p></div>
                         <div><p className="text-muted-foreground">Hub</p><p className="text-primary">{formData.storeName}</p></div>
-                        <div className="col-span-2"><p className="text-muted-foreground">Deployment Vector</p><p className="text-primary">{formData.address}, {formData.city}</p></div>
+                        <div><p className="text-muted-foreground">Inventory</p><p className="text-primary">{formData.initialInventory.length} SKUs READY</p></div>
+                        <div><p className="text-muted-foreground">Status</p><p className="text-secondary">READY FOR UPLINK</p></div>
                       </div>
                     </Card>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {["Free", "Pro"].map(p => (
-                        <div 
-                          key={p}
-                          onClick={() => setValue('plan', p as "Free" | "Pro", { shouldValidate: true })}
-                          className={cn(
-                            "p-4 border cursor-pointer transition-all",
-                            formData.plan === p ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(0,212,255,0.2)]" : "border-white/10 hover:border-white/30"
-                          )}
-                        >
-                          <p className="font-headline text-xs">{p} PROTOCOL</p>
-                          <p className="text-[9px] font-mono text-muted-foreground mt-1">
-                            {p === 'Free' ? 'Baseline Analysis' : 'Apex Intelligence Engine'}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="terms" 
-                          checked={formData.terms}
-                          onCheckedChange={(val) => setValue('terms', val as boolean, { shouldValidate: true })} 
-                        />
-                        <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer">
-                          Accept Node Operator Terms & Conditions
-                        </label>
-                      </div>
-                      {errors.terms && <p className="text-[10px] text-destructive font-mono">{errors.terms.message}</p>}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="terms" checked={formData.terms} onCheckedChange={(v) => setValue('terms', v as boolean)} />
+                      <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer">
+                        Accept Sovereign Node Operating Terms
+                      </label>
                     </div>
                   </div>
                 )}
 
                 <div className="flex gap-4 pt-8">
                   {step > 1 && (
-                    <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1 h-12 font-headline text-[10px] tracking-widest">
-                      <ArrowLeft className="w-4 h-4 mr-2" /> REVERT
+                    <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1 h-12 font-headline text-[10px] tracking-widest uppercase">
+                      <ArrowLeft className="w-4 h-4 mr-2" /> Revert
                     </Button>
                   )}
-                  {step < 3 ? (
-                    <Button onClick={handleNext} className="flex-[2] h-12 font-headline text-[10px] tracking-widest bg-primary text-black hover:bg-primary/80 glow-cyan">
-                      NEXT VECTOR <ArrowRight className="w-4 h-4 ml-2" />
+                  {step < 4 ? (
+                    <Button onClick={handleNext} className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-primary text-black hover:bg-primary/80">
+                      Synchronize <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   ) : (
                     <Button 
-                      onClick={handleSubmit(onSubmit, onInvalid)} 
+                      onClick={handleSubmit(onSubmit)} 
                       disabled={loading || !formData.terms}
-                      className="flex-[2] h-12 font-headline text-[10px] tracking-widest bg-secondary text-black hover:bg-secondary/80 glow-green"
+                      className="flex-[2] h-12 font-headline text-[10px] tracking-widest uppercase bg-secondary text-black hover:bg-secondary/80"
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-2" /> INITIALIZE DARK STORE</>}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-2" /> Deploy Hub Node</>}
                     </Button>
                   )}
                 </div>
