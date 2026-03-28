@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { collectionGroup, query, where, limit, orderBy } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,15 +10,18 @@ import { cn } from "@/lib/utils";
 
 export function AiGlobalMonitor() {
   const db = useFirestore();
+  const { user, userProfile } = useUser();
 
   const globalAtRiskQuery = useMemoFirebase(() => {
+    // Defensive check: Ensure user is an admin before firing collectionGroup query
+    if (!user || userProfile?.role !== 'admin') return null;
     return query(
       collectionGroup(db, 'inventory'),
       where('currentStock', '<=', 5),
       orderBy('currentStock', 'asc'),
       limit(15)
     );
-  }, [db]);
+  }, [db, user, userProfile?.role]);
 
   const { data: atRiskItems, isLoading } = useCollection(globalAtRiskQuery);
 

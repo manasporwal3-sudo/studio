@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { collection, query, where, orderBy } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,15 +14,18 @@ import { cn } from "@/lib/utils";
 
 export function ActiveStoresGrid() {
   const db = useFirestore();
+  const { user, userProfile } = useUser();
   const router = useRouter();
 
   const storesQuery = useMemoFirebase(() => {
+    // Defensive check: Only initiate query if authorized
+    if (!user || userProfile?.role !== 'admin') return null;
     return query(
       collection(db, 'users'),
       where('role', '==', 'store'),
       orderBy('lastActive', 'desc')
     );
-  }, [db]);
+  }, [db, user, userProfile?.role]);
 
   const { data: stores, isLoading } = useCollection(storesQuery);
 

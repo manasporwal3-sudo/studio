@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,14 +9,17 @@ import { cn } from "@/lib/utils";
 
 export function PlatformActivityLogs() {
   const db = useFirestore();
+  const { user, userProfile } = useUser();
 
   const logsQuery = useMemoFirebase(() => {
+    // Defensive check: Ensure user is an admin before firing query
+    if (!user || userProfile?.role !== 'admin') return null;
     return query(
       collection(db, 'platform_activity'),
       orderBy('timestamp', 'desc'),
       limit(30)
     );
-  }, [db]);
+  }, [db, user, userProfile?.role]);
 
   const { data: logs, isLoading } = useCollection(logsQuery);
 
@@ -31,7 +34,7 @@ export function PlatformActivityLogs() {
       </div>
       
       <CardContent className="flex-1 overflow-y-auto p-4 custom-scrollbar font-mono text-[9px] space-y-3">
-        {isLoading && logs?.length === 0 ? (
+        {isLoading && (!logs || logs.length === 0) ? (
           <p className="text-muted-foreground/20 animate-pulse">Establishing uplink...</p>
         ) : !logs || logs.length === 0 ? (
           <p className="text-muted-foreground/20 italic uppercase tracking-widest text-center mt-20">Awaiting node signals...</p>

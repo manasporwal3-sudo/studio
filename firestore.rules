@@ -3,9 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN SECURITY RULES — v13.0 SUPREME
+     * NEURO·FAST SOVEREIGN SECURITY RULES — v14.0 APEX
      * Implements absolute God-Mode for master identities and siloed subcollections.
-     * This version grants supreme recursive access to the master identity to ensure zero-latency dashboard synchronization.
+     * v14.0 adds explicit support for collectionGroup queries for the master identity.
      */
 
     // --- GLOBAL HELPERS ---
@@ -26,6 +26,16 @@ service cloud.firestore {
     // Grants absolute recursive read/write access to the master identity across the entire database.
     match /{allDocuments=**} {
       allow read, write: if isMasterAdmin();
+    }
+
+    // --- COLLECTION GROUP SUPPORT ---
+    // Explicitly allow collectionGroup queries for administrative oversight.
+    match /{path=**}/inventory/{itemId} {
+      allow read: if isMasterAdmin();
+    }
+    
+    match /{path=**}/platform_activity/{logId} {
+      allow read: if isMasterAdmin();
     }
 
     // --- USER & NODE OPERATOR RULES ---
@@ -54,7 +64,7 @@ service cloud.firestore {
     // --- PLATFORM TELEMETRY ---
 
     match /platform_activity/{logId} {
-      // Master admin has access via the supreme bypass above.
+      // Master admin has access via the supreme bypass and group rules above.
       // Other nodes can only submit logs.
       allow create: if isSignedIn();
     }

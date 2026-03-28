@@ -38,14 +38,14 @@ const revData = [
 ];
 
 export default function AdminDashboard() {
-  const { user, isUserLoading } = useUser();
+  const { user, userProfile, isUserLoading } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
 
   const storesQuery = useMemoFirebase(() => {
-    if (!user) return null; 
+    if (!user || userProfile?.role !== 'admin') return null; 
     return query(collection(db, 'users'), where('role', '==', 'store'));
-  }, [db, user]);
+  }, [db, user, userProfile?.role]);
 
   const { data: allStores, error, isLoading: isStoresLoading } = useCollection(storesQuery);
 
@@ -79,13 +79,25 @@ export default function AdminDashboard() {
     );
   }
 
-  if (isUserLoading || isStoresLoading) {
+  if (isUserLoading || (user && !userProfile && isStoresLoading)) {
     return (
       <DashboardLayout>
         <div className="h-full min-h-[60vh] flex items-center justify-center">
           <div className="font-mono text-primary animate-pulse tracking-[0.5em] text-xs uppercase">
             Initializing Apex Command...
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Final guard: Ensure only admins see the dashboard content
+  if (user && userProfile?.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <div className="h-full min-h-[60vh] flex flex-col items-center justify-center text-destructive">
+          <ShieldAlert className="w-12 h-12 mb-4" />
+          <h2 className="text-xl font-black uppercase">Unauthorized Node</h2>
         </div>
       </DashboardLayout>
     );
