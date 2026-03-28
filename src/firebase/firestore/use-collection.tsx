@@ -21,8 +21,8 @@ export interface UseCollectionResult<T> {
 }
 
 export interface InternalQuery extends Query<DocumentData> {
-  _query: {
-    path: {
+  _query?: {
+    path?: {
       canonicalString(): string;
       toString(): string;
     }
@@ -45,7 +45,6 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // If the reference is null, reset state and exit early.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -56,7 +55,6 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Establish the real-time listener.
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -68,12 +66,11 @@ export function useCollection<T = any>(
         setError(null);
         setIsLoading(false);
       },
-      (err: FirestoreError) => {
-        // Handle security rules and connectivity errors.
+      async (err: FirestoreError) => {
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString() || 'root';
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query?.path?.canonicalString() || 'unknown_query';
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
@@ -87,7 +84,6 @@ export function useCollection<T = any>(
       }
     );
 
-    // Cleanup the listener on unmount or when the query changes.
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
 

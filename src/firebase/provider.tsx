@@ -85,7 +85,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               userError: null 
             });
           } catch (error: any) {
-            console.warn("Error fetching user profile (retrying silently):", error.message);
             setUserAuthState({ 
               user: firebaseUser, 
               userProfile: null,
@@ -151,7 +150,7 @@ export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp;
 
 /**
  * useMemoFirebase provides a stable reference for Firestore queries and references.
- * Important: We no longer inject external properties into Firestore objects to prevent SDK assertion crashes.
+ * We rely on standard React useMemo to maintain object identity without intrusive injection.
  */
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   return useMemo(factory, deps);
