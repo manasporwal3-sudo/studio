@@ -15,7 +15,8 @@ import {
   Server,
   Network,
   Activity,
-  Globe
+  Globe,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -64,10 +65,10 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-3xl font-black font-headline tracking-tighter uppercase italic text-white flex items-center gap-3">
               <Globe className="w-8 h-8 text-primary glow-cyan" />
-              Strategic Oversight
+              Store Management
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold mt-2">
-              Global Node Management Protocol // Apex v10.5
+              Global Node Oversight & Hub Management // Apex v10.5
             </p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
@@ -88,10 +89,10 @@ export default function AdminDashboard() {
           <StatCard label="Registered Hubs" value={stats.totalNodes} icon={<Server className="text-primary" />} color="primary" />
           <StatCard label="Online Nodes" value={stats.onlineNodes} icon={<Activity className="text-secondary animate-pulse" />} color="secondary" />
           <StatCard label="Mesh Integrity" value={`${stats.meshIntegrity}%`} icon={<Zap className="text-accent" />} color="accent" />
-          <StatCard label="Neural Latency" value="0.8ms" icon={<Network className="text-white/40" />} color="muted" />
+          <StatCard label="Neural Latency" value="0.8ms" icon={<Settings className="text-white/40" />} color="muted" />
         </div>
 
-        {/* Real-time Activity Matrix */}
+        {/* Real-time Hub Management Matrix */}
         <div className="space-y-4">
           <div className="flex items-center gap-4 mb-4">
             <h3 className="font-headline text-lg font-bold uppercase tracking-widest text-white">Hub Management Matrix</h3>

@@ -29,7 +29,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 import { FloatingChatbot } from './floating-chatbot';
 
 function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string, activeStoreId: string, pathname: string, onItemClick?: () => void }) {
-  // ADMIN-ONLY SIDEBAR (GOD MODE)
+  // ADMIN-ONLY SIDEBAR (STRATEGIC OVERSIGHT)
   const adminItems = [
     { name: 'Store Management', icon: <Globe className="w-4 h-4" />, href: '/admin/dashboard' },
     { name: 'Fleet Matrix', icon: <Network className="w-4 h-4" />, href: '/riders' },
