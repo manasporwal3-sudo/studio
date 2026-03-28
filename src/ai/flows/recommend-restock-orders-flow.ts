@@ -20,6 +20,7 @@ const RecommendRestockOrdersOutputSchema = z.object({
     cost: z.number(),
     urgency: z.enum(['Critical', 'High', 'Medium', 'Low']),
     justification: z.string(),
+    supplierName: z.string().optional(),
   })),
   intelligenceBrief: z.string().describe("Full v9.0 APEX Reorder Planning Brief."),
   overallInsights: z.string(),
@@ -51,6 +52,12 @@ Execute MODE 2 (Reorder Command).
 });
 
 export async function recommendRestockOrders(input: RecommendRestockOrdersInput): Promise<RecommendRestockOrdersOutput> {
-  const { output } = await prompt(input);
-  return output!;
+  try {
+    const { output } = await prompt(input);
+    if (!output) throw new Error('Sovereign Engine failed to generate reorder plan.');
+    return output!;
+  } catch (error: any) {
+    console.error("AI Flow Error (recommendRestockOrders):", error);
+    throw new Error(error.message || "Autonomous Agent connection failure.");
+  }
 }

@@ -82,7 +82,12 @@ Execute MODE 1 (Full Analysis). Deliver the complete Intelligence Brief and popu
 });
 
 export async function generateDashboardInsights(input: DashboardInsightsInput): Promise<DashboardInsightsOutput> {
-  const { output } = await prompt(input);
-  if (!output) throw new Error('Sovereign Engine failed to generate intelligence brief.');
-  return output;
+  try {
+    const { output } = await prompt(input);
+    if (!output) throw new Error('Sovereign Engine failed to generate intelligence brief.');
+    return output;
+  } catch (error: any) {
+    console.error("AI Flow Error (generateDashboardInsights):", error);
+    throw new Error(error.message || "Uplink to Sovereign Engine timed out.");
+  }
 }

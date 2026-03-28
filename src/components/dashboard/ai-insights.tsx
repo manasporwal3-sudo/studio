@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { generateDashboardInsights, type DashboardInsightsOutput } from "@/ai/flows/generate-dashboard-insights-flow"
 import { SKUS, STORES } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +19,7 @@ export function AIInsights() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadInsights = async () => {
+  const loadInsights = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -43,11 +43,11 @@ export function AIInsights() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [storeId, activeStore])
 
   useEffect(() => {
     loadInsights()
-  }, [storeId, activeStore])
+  }, [loadInsights])
 
   if (loading) {
     return (

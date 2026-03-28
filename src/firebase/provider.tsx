@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -85,8 +84,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
               isUserLoading: false, 
               userError: null 
             });
-          } catch (error) {
-            console.error("Error fetching user profile:", error);
+          } catch (error: any) {
+            console.warn("Error fetching user profile (retrying silently):", error.message);
+            // On failure, we still set the user so the app can attempt to function
             setUserAuthState({ 
               user: firebaseUser, 
               userProfile: null,
