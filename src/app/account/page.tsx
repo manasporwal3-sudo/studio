@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useUser, useAuth } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Shield, Key, Clock, LogOut } from "lucide-react";
+import { User, Shield, Clock, LogOut } from "lucide-react";
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -28,7 +28,7 @@ export default function AccountPage() {
                 {user?.email?.[0].toUpperCase() || 'A'}
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-3xl font-bold font-headline tracking-tighter uppercase">
+                <CardTitle className="text-3xl font-bold font-headline tracking-tighter uppercase italic">
                   {user?.email?.split('@')[0] || 'Neural Agent'}
                 </CardTitle>
                 <CardDescription className="text-xs uppercase tracking-widest font-bold text-primary">
@@ -44,14 +44,6 @@ export default function AccountPage() {
                 <div className="flex-1">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Identity Protocol</p>
                   <p className="text-sm font-mono">{user?.email}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                <Key className="w-5 h-5 text-primary" />
-                <div className="flex-1">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Neural ID</p>
-                  <p className="text-xs font-mono opacity-50">{user?.uid}</p>
                 </div>
               </div>
 
