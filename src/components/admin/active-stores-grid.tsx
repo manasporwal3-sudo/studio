@@ -39,26 +39,23 @@ export function ActiveStoresGrid() {
 
   return (
     <Card className="tactical-panel border-none bg-black/40 overflow-hidden before:bg-primary/20">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-6">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
         <div className="flex items-center gap-3">
           <Activity className="w-4 h-4 text-primary" />
-          <CardTitle className="text-xs font-headline tracking-widest text-white uppercase">
-            Active Node Matrix Telemetry
+          <CardTitle className="text-[10px] font-headline tracking-[0.2em] text-white uppercase">
+            LIVE NODE MESH TELEMETRY
           </CardTitle>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-mono text-[9px] border-primary/20 text-primary">LIVE MESH</Badge>
-          {isLoading && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
-        </div>
+        {isLoading && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
       </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow className="bg-white/5 border-white/5 hover:bg-transparent">
-              <TableHead className="text-[10px] uppercase font-mono tracking-widest py-6">Node Identifier</TableHead>
+              <TableHead className="text-[10px] uppercase font-mono tracking-widest py-4">Identifier</TableHead>
               <TableHead className="text-[10px] uppercase font-mono tracking-widest">Network Status</TableHead>
-              <TableHead className="text-[10px] uppercase font-mono tracking-widest">Last Heartbeat</TableHead>
-              <TableHead className="text-[10px] uppercase font-mono tracking-widest text-right">Protocol</TableHead>
+              <TableHead className="text-[10px] uppercase font-mono tracking-widest">Heartbeat</TableHead>
+              <TableHead className="text-[10px] uppercase font-mono tracking-widest text-right">Oversight</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -69,18 +66,15 @@ export function ActiveStoresGrid() {
                   <motion.tr
                     key={store.id}
                     layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     className="border-white/5 hover:bg-white/5 group transition-colors"
                   >
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-bold text-sm text-white">{store.storeName || 'UNNAMED HUB'}</span>
-                        <div className="flex items-center gap-2 text-[9px] font-mono text-muted-foreground uppercase">
-                          <Mail className="w-2.5 h-2.5" />
-                          {store.email}
-                        </div>
+                        <span className="font-bold text-xs text-white uppercase">{store.storeName || 'UNNAMED_HUB'}</span>
+                        <span className="text-[9px] font-mono text-muted-foreground uppercase">{store.uid}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -90,28 +84,28 @@ export function ActiveStoresGrid() {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                           </div>
-                          <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest glow-text-primary">ONLINE</span>
+                          <span className="font-mono text-[9px] text-primary font-bold uppercase tracking-widest glow-text-primary">LIVE</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 opacity-50">
                           <div className="w-2 h-2 rounded-full border border-primary/40"></div>
-                          <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">IDLE</span>
+                          <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">IDLE</span>
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-mono text-[10px] text-muted-foreground">
+                    <TableCell className="font-mono text-[9px] text-muted-foreground uppercase">
                       {store.lastActive 
-                        ? formatDistanceToNow(typeof store.lastActive.toDate === 'function' ? store.lastActive.toDate() : new Date(store.lastActive), { addSuffix: true }).toUpperCase()
-                        : 'NO TELEMETRY'}
+                        ? formatDistanceToNow(typeof store.lastActive.toDate === 'function' ? store.lastActive.toDate() : new Date(store.lastActive), { addSuffix: true })
+                        : 'NO_SIGNAL'}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => handleGhostTunnel(store.uid)}
-                        className="text-primary hover:bg-primary/10 font-mono text-[9px] uppercase tracking-widest h-8"
+                        className="text-primary hover:bg-primary/10 font-mono text-[9px] uppercase tracking-widest h-7"
                       >
-                        <Eye className="w-3.5 h-3.5 mr-2" />
+                        <Eye className="w-3 h-3 mr-2" />
                         GHOST_TUNNEL
                       </Button>
                     </TableCell>
@@ -119,10 +113,10 @@ export function ActiveStoresGrid() {
                 );
               })}
             </AnimatePresence>
-            {!isLoading && stores?.length === 0 && (
+            {!isLoading && (!stores || stores.length === 0) && (
               <TableRow>
-                <TableCell colSpan={4} className="p-20 text-center">
-                  <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Awaiting node authentication signals...</p>
+                <TableCell colSpan={4} className="p-12 text-center">
+                  <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Awaiting node synchronization...</p>
                 </TableCell>
               </TableRow>
             )}

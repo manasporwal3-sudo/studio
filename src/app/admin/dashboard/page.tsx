@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ActiveStoresGrid } from "@/components/admin/active-stores-grid";
@@ -29,50 +28,68 @@ import { cn } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const revData = [
-  { time: '00:00', val: 400 },
-  { time: '04:00', val: 300 },
-  { time: '08:00', val: 900 },
-  { time: '12:00', val: 1400 },
-  { time: '16:00', val: 2100 },
-  { time: '20:00', val: 1800 },
-  { time: '23:59', val: 2400 },
+  { time: '00:00', val: 4000 },
+  { time: '04:00', val: 3200 },
+  { time: '08:00', val: 9500 },
+  { time: '12:00', val: 14800 },
+  { time: '16:00', val: 21200 },
+  { time: '20:00', val: 18500 },
+  { time: '23:59', val: 24600 },
 ];
 
 export default function AdminDashboard() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
-  const [isNuking, setIsNuking] = useState(false);
 
-  // Stats Telemetry
-  const storesQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
-  const { data: allUsers } = useCollection(storesQuery);
+  const storesQuery = useMemoFirebase(() => {
+    if (!user) return null; 
+    return query(collection(db, 'users'), where('role', '==', 'store'));
+  }, [db, user]);
+
+  const { data: allStores, error, isLoading: isStoresLoading } = useCollection(storesQuery);
 
   const stats = useMemo(() => {
-    const stores = allUsers?.filter(u => u.role === 'store') || [];
-    const onlineCount = stores.filter(s => {
-      if (!s.lastActive) return false;
-      const lastActiveDate = typeof s.lastActive.toDate === 'function' ? s.lastActive.toDate() : new Date(s.lastActive);
-      return (new Date().getTime() - lastActiveDate.getTime()) < 120000;
+    if (!allStores) return { totalNodes: 0, onlineNodes: 0, meshIntegrity: 0 };
+    
+    const now = Date.now();
+    const online = allStores.filter(s => {
+      const lastActive = s.lastActive?.toDate?.() || new Date(s.lastActive || 0);
+      return (now - lastActive.getTime()) < 120000;
     }).length;
 
     return {
-      totalNodes: stores.length,
-      onlineNodes: onlineCount,
-      meshIntegrity: stores.length > 0 ? Math.round((onlineCount / stores.length) * 100) : 100
+      totalNodes: allStores.length,
+      onlineNodes: online,
+      meshIntegrity: allStores.length > 0 ? Math.round((online / allStores.length) * 100) : 0
     };
-  }, [allUsers]);
+  }, [allStores]);
 
-  const handleDemoNuke = async () => {
-    if (!confirm("CRITICAL WARNING: This will permanently purge all test stores and inventory. Proceed?")) return;
-    
-    setIsNuking(false);
-    toast({
-      variant: "destructive",
-      title: "DEMO DATA PURGE INITIATED",
-      description: "Purging network fabric documents...",
-    });
-  };
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="h-full min-h-[60vh] flex flex-col items-center justify-center font-mono text-destructive gap-4">
+          <ShieldAlert className="w-12 h-12 animate-pulse" />
+          <div className="text-center">
+            <h2 className="text-xl font-black uppercase tracking-tighter">Apex Access Denied</h2>
+            <p className="text-[10px] opacity-50 uppercase tracking-widest mt-2">Security Policy Violation Detected</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (isUserLoading || isStoresLoading) {
+    return (
+      <DashboardLayout>
+        <div className="h-full min-h-[60vh] flex items-center justify-center">
+          <div className="font-mono text-primary animate-pulse tracking-[0.5em] text-xs uppercase">
+            Initializing Apex Command...
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -80,11 +97,11 @@ export default function AdminDashboard() {
         {/* Header HUD */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(20,255,236,0.2)]">
-               <ShieldAlert className="w-8 h-8 text-primary" />
+            <div className="w-14 h-14 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(20,255,236,0.2)]">
+               <ShieldAlert className="w-9 h-9 text-primary glow-cyan" />
             </div>
             <div>
-              <h1 className="text-3xl font-black font-headline tracking-tighter uppercase italic text-white flex items-center gap-3">
+              <h1 className="text-4xl font-black font-headline tracking-tighter uppercase italic text-white">
                 Apex Command
               </h1>
               <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold mt-1">
@@ -92,16 +109,11 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <Button 
-              variant="destructive"
-              onClick={handleDemoNuke}
-              disabled={isNuking}
-              className="bg-destructive/10 border border-destructive/50 text-destructive hover:bg-destructive/20 font-mono text-[10px] tracking-widest h-12 px-8 uppercase"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Reset Platform
-            </Button>
+          <div className="flex gap-4">
+            <div className="px-4 py-2 border border-white/10 bg-black/40 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <Activity className="w-3 h-3 text-secondary animate-pulse" />
+              Mesh Sync: Active
+            </div>
           </div>
         </div>
 
@@ -115,32 +127,32 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Matrix */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-10">
             <div className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-2">
                 <Brain className="w-5 h-5 text-primary" />
-                <h3 className="font-headline text-lg font-bold uppercase tracking-widest text-white">AI Global Monitor</h3>
+                <h3 className="font-headline text-sm font-bold uppercase tracking-[0.2em] text-white">AI Global Monitor</h3>
               </div>
               <AiGlobalMonitor />
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-2">
                 <Globe className="w-5 h-5 text-secondary" />
-                <h3 className="font-headline text-lg font-bold uppercase tracking-widest text-white">Active Node Matrix</h3>
+                <h3 className="font-headline text-sm font-bold uppercase tracking-[0.2em] text-white">Active Darkstores Matrix</h3>
               </div>
               <ActiveStoresGrid />
             </div>
           </div>
 
           {/* Sidebar Modules */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             <div className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-2">
                 <TrendingUp className="w-5 h-5 text-accent" />
-                <h3 className="font-headline text-xs font-bold uppercase tracking-widest text-white">Aggregate Performance</h3>
+                <h3 className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-white">Aggregate Performance</h3>
               </div>
-              <Card className="tactical-panel bg-black/40 border-none p-6 h-[300px]">
+              <Card className="tactical-panel border-none bg-black/40 p-6 h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={revData}>
                     <defs>
@@ -160,9 +172,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-2">
                 <Terminal className="w-5 h-5 text-muted-foreground" />
-                <h3 className="font-headline text-xs font-bold uppercase tracking-widest text-white">Global Event Log</h3>
+                <h3 className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-white">System Event Log</h3>
               </div>
               <PlatformActivityLogs />
             </div>
@@ -177,13 +189,13 @@ function StatCard({ label, value, icon, color }: { label: string, value: string 
   return (
     <Card className={cn(
       "tactical-panel border-none bg-black/40 before:bg-white/10",
-      color === 'primary' && "before:bg-primary",
+      color === 'primary' && "before:bg-primary shadow-[0_0_15px_rgba(20,255,236,0.1)]",
       color === 'secondary' && "before:bg-secondary",
       color === 'accent' && "before:bg-accent"
     )}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{label}</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
           {icon}
         </div>
         <div className="text-3xl font-black font-headline tracking-tighter text-white">{value}</div>
