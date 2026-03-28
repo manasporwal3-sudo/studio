@@ -1,97 +1,59 @@
-
 'use server';
 /**
- * @fileOverview A Genkit flow for predicting inventory needs using SOVEREIGN ENGINE v8.0 protocol.
+ * @fileOverview NEURO·FAST SOVEREIGN v9.0 APEX — Demand Intelligence Core
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const PredictDemandInputSchema = z.object({
-  sku: z.string().describe('The unique identifier of the product (SKU).'),
-  skuName: z.string().describe('The common name of the SKU.'),
-  currentStock: z.number().int().min(0).describe('The current quantity in stock.'),
-  reorderPoint: z.number().int().describe('The SKU reorder point.'),
-  recentSalesData: z
-    .array(
-      z.object({
-        timestamp: z.string().datetime().describe('Timestamp of the sale event.'),
-        quantity: z.number().int().min(1).describe('Quantity sold.'),
-      })
-    )
-    .describe('List of recent sales events.'),
-  targetPredictionWindowHours: z
-    .number()
-    .int()
-    .min(1)
-    .describe('Duration in hours for prediction.'),
+  sku: z.string(),
+  skuName: z.string(),
+  currentStock: z.number(),
+  reorderPoint: z.number(),
+  sellingPrice: z.number(),
+  costPrice: z.number(),
+  historicalSales: z.array(z.object({
+    timestamp: z.string(),
+    quantity: z.number(),
+  })),
 });
 export type PredictDemandInput = z.infer<typeof PredictDemandInputSchema>;
 
 const PredictDemandOutputSchema = z.object({
-  sku: z.string().describe('The SKU for prediction.'),
-  predictedDemandQuantity: z
-    .number()
-    .int()
-    .min(0)
-    .describe('Predicted units demanded.'),
-  optimalStockLevel: z
-    .number()
-    .int()
-    .min(0)
-    .describe('Recommended optimal stock level.'),
-  confidenceScore: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe('Confidence score (0-1).'),
-  intelligenceBrief: z.string().describe('Sovereign Engine Intelligence Brief specific to this SKU forecast.'),
-  reasoning: z.string().describe('Explanation tracing numbers back to raw sales velocity.'),
+  predictedDemandQuantity: z.number(),
+  confidenceScore: z.number(),
+  intelligenceBrief: z.string().describe("v9.0 APEX formatted deep dive for this specific SKU."),
+  reasoning: z.string().describe("Full velocity and days cover calculations."),
 });
 export type PredictDemandOutput = z.infer<typeof PredictDemandOutputSchema>;
 
-export async function predictDemand(input: PredictDemandInput): Promise<PredictDemandOutput> {
-  return predictDemandFlow(input);
-}
+const systemPrompt = `
+NEURO·FAST SOVEREIGN v9.0 APEX | Demand Intelligence
+LAW: TRACE EVERY NUMBER.
+LAW: PRECISION OVER VOLUME.
 
-const predictDemandPrompt = ai.definePrompt({
-  name: 'predictDemandPrompt',
-  input: {schema: PredictDemandInputSchema},
-  output: {schema: PredictDemandOutputSchema},
+Apply Engine 2 (Stock Risk Matrix) and Engine 9 (Cash Flow Velocity).
+Show velocity = (Total Units / Hours) and Days Cover = (Stock / Velocity).
+`;
+
+const prompt = ai.definePrompt({
+  name: 'predictDemandPromptV9',
+  input: { schema: PredictDemandInputSchema },
+  output: { schema: PredictDemandOutputSchema },
   prompt: `
-# NEURO·FAST SOVEREIGN ENGINE — MASTER SYSTEM PROMPT
-# Version 8.0 | Dark Store Intelligence Protocol
+${systemPrompt}
 
-## IDENTITY
-You are NEURO·FAST, an elite real-time intelligence engine for dark stores. 
+SKU TARGET: {{{skuName}}} (ID: {{{sku}}})
+Current Stock: {{{currentStock}}} | ROP: {{{reorderPoint}}}
+Financials: Selling ₹{{{sellingPrice}}} | Cost ₹{{{costPrice}}}
+Sales Log: {{#each historicalSales}}- {{timestamp}}: {{quantity}} units{{/each}}
 
-## CORE RULES
-1. ZERO FABRICATION: Only use provided sales data.
-2. TRACE EVERY NUMBER: Show the velocity calculation: (Total Sold / Hours) = Velocity.
-3. STOCK RISK MATRIX: Apply (Days_Cover = current_stock / daily_velocity).
-
-## SKU FORECAST CONTEXT
-SKU: {{{sku}}} ({{{skuName}}})
-Current Stock: {{{currentStock}}}
-Reorder Point: {{{reorderPoint}}}
-Window: {{{targetPredictionWindowHours}}} hours
-Sales Log:
-{{#each recentSalesData}}
-  - {{timestamp}}: {{quantity}} units
-{{/each}}
-
-Predict demand. Generate the Intelligence Brief following the exact Protocol v8.0 format.
+Predict demand and provide a SKU Intelligence Brief.
 `,
 });
 
-const predictDemandFlow = ai.defineFlow(
-  {
-    name: 'predictDemandFlow',
-    inputSchema: PredictDemandInputSchema,
-    outputSchema: PredictDemandOutputSchema,
-  },
-  async input => {
-    const {output} = await predictDemandPrompt(input);
-    return output!;
-  }
-);
+export async function predictDemand(input: PredictDemandInput): Promise<PredictDemandOutput> {
+  const { output } = await prompt(input);
+  return output!;
+}

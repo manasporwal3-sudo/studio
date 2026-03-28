@@ -43,6 +43,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     { name: 'Rider Mesh', icon: <Network className="w-4 h-4" />, href: '/riders' },
     { name: 'Instrument Cluster', icon: <Crosshair className="w-4 h-4" />, href: '/rider-cluster' },
     { name: 'Predictive Brain', icon: <Cpu className="w-4 h-4" />, href: '/predictive' },
+    { name: 'Neural Insights', icon: <Activity className="w-4 h-4" />, href: '/insights' },
     { name: 'Agent Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];
 
@@ -68,12 +69,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <span className="font-headline font-extrabold tracking-tighter text-lg leading-none block">NEURO·FAST</span>
-            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">SOVEREIGN ENGINE v8.0</span>
+            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">SOVEREIGN APEX v9.0</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-8">
-          <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.2em] uppercase">Intelligence Modules</p>
+        <nav className="flex-1 px-4 space-y-1 mt-8">
+          <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.3em] uppercase opacity-50">Cognitive Modules</p>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -81,14 +82,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <div className={cn(
                   "flex items-center gap-3 px-4 py-3 transition-all group relative cursor-pointer",
                   isActive 
-                    ? "bg-primary/10 text-primary" 
+                    ? "bg-primary/10 text-primary border-r-2 border-primary" 
                     : "text-muted-foreground hover:bg-white/5 hover:text-white"
                 )}>
-                  {isActive && <div className="absolute left-0 top-0 w-1 h-full bg-primary shadow-[0_0_10px_rgba(20,255,236,1)]" />}
                   <span className={cn("transition-transform duration-300 group-hover:scale-110", isActive && "text-primary glow-text-primary")}>
                     {item.icon}
                   </span>
-                  <span className="font-mono text-xs uppercase tracking-widest">{item.name}</span>
+                  <span className="font-mono text-[11px] uppercase tracking-widest">{item.name}</span>
                   {isActive && <ChevronRight className="ml-auto w-3 h-3 animate-pulse" />}
                 </div>
               </Link>
@@ -97,6 +97,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-6 border-t border-white/5">
+          <div className="mb-4 p-4 bg-primary/5 border border-white/5 rounded-sm">
+             <div className="flex items-center justify-between mb-1">
+               <span className="font-mono text-[8px] text-muted-foreground uppercase">Neural Health</span>
+               <span className="font-mono text-[8px] text-primary uppercase">99.8%</span>
+             </div>
+             <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+               <div className="h-full bg-primary" style={{ width: '99.8%' }} />
+             </div>
+          </div>
           <Button 
             variant="ghost" 
             className="w-full font-mono text-[10px] uppercase tracking-[0.2em] text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -130,10 +139,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="h-8 w-px bg-white/5" />
-            <div className="w-8 h-8 border border-white/10 flex items-center justify-center relative">
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full animate-ping" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full" />
-              <Zap className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="px-3 py-1 bg-accent/10 border border-accent/30 rounded-sm">
+                <span className="font-mono text-[9px] text-accent font-bold uppercase">Apex v9.0 Enabled</span>
+              </div>
+              <div className="w-8 h-8 border border-white/10 flex items-center justify-center relative">
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full animate-ping" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full" />
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
             </div>
           </div>
         </header>
