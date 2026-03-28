@@ -1,72 +1,53 @@
-
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a registered dark store owner/operator with SaaS-level profile data.",
+      "description": "System-wide user profile with RBAC support.",
       "properties": {
-        "id": { "type": "string" },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
+        "uid": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "phoneNumber": { "type": "string" },
-        "address": { "type": "string" },
-        "pinCode": { "type": "string" },
-        "gstNumber": { "type": "string" },
-        "expectedDailyOrders": { "type": "integer" },
-        "outletsCount": { "type": "integer" },
-        "roleIds": { "type": "array", "items": { "type": "string" } },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "firstName", "lastName", "email", "roleIds", "createdAt", "updatedAt"]
-    },
-    "Rider": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Rider",
-      "type": "object",
-      "description": "Represents a delivery rider with detailed telemetry and vehicle data.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "mobile": { "type": "string" },
-        "vehicleType": { "type": "string", "enum": ["Bike", "Scooter", "Electric Scooter", "Cycle", "Van", "Other"] },
-        "vehicleNumber": { "type": "string" },
-        "zone": { "type": "string" },
-        "joinDate": { "type": "string", "format": "date" },
-        "batteryLevel": { "type": "integer", "minimum": 0, "maximum": 100 },
-        "licenseExpiry": { "type": "string", "format": "date" },
-        "emergencyContact": { "type": "string" },
-        "status": { "type": "string", "enum": ["idle", "on_delivery", "offline"] },
-        "darkStoreId": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "store"] },
+        "storeId": { "type": "string" },
+        "displayName": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "mobile", "vehicleType", "vehicleNumber", "zone", "status"]
+      }
+    },
+    "DarkStore": {
+      "title": "DarkStore",
+      "type": "object",
+      "description": "Store metadata and tactical metrics.",
+      "properties": {
+        "storeId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "totalOrders": { "type": "integer" },
+            "activeRiders": { "type": "integer" },
+            "revenue": { "type": "number" },
+            "stockHealth": { "type": "integer" }
+          }
+        }
+      }
     }
   },
   "auth": {
     "providers": ["password"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": { "$ref": "#/backend/entities/User" },
-          "description": "Store owner profiles."
-        }
-      },
-      {
-        "path": "/riders/{riderId}",
-        "definition": {
-          "entityName": "Rider",
-          "schema": { "$ref": "#/backend/entities/Rider" },
-          "description": "Global fleet management."
-        }
-      }
-    ]
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Private node for user profiles and store-specific subcollections."
+    },
+    "/darkStores/{storeId}": {
+      "schema": { "$ref": "#/entities/DarkStore" },
+      "description": "Global store directory for admin oversight."
+    },
+    "/app_admins/{userId}": {
+      "schema": { "type": "object" },
+      "description": "Admin registry for RBAC elevation."
+    }
   }
 }

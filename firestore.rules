@@ -3,116 +3,58 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO-FAST SECURITY RULES — VERSION 9.0 APEX
-     *
-     * Core Philosophy:
-     * This ruleset enforces strict individual ownership for node operators.
-     * Documents under /users/{userId} are private to that user and accessible by admins.
+     * NEURO·FAST SOVEREIGN SECURITY RULES — v10.0 GOD MODE
+     * Implements recursive RBAC and multi-tenant sandboxing.
      */
 
-    // --- GLOBAL HELPER FUNCTIONS ---
+    // --- GLOBAL HELPERS ---
 
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Admins are defined by their document presence in the app_admins collection
+    // or a role field in their user profile.
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/app_admins/$(request.auth.uid));
+      return isSignedIn() && 
+        (exists(/databases/$(database)/documents/app_admins/$(request.auth.uid)) ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    function hasRole(membersMap, role) {
-      return isSignedIn() && membersMap[request.auth.uid] == role;
-    }
-
-    function isMember(membersMap) {
-      return isSignedIn() && request.auth.uid in membersMap;
-    }
-
     // --- COLLECTION RULES ---
 
-    /**
-     * @description Core user profiles and private data trees.
-     * Users have full control over their own node and its subcollections (inventory, analytics, etc).
-     */
-    match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isAdmin();
+    // GLOBAL ACCESS FOR ADMINS
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
 
-      // Allow recursive access to all user-owned subcollections (Inventory, Orders, etc.)
+    // STORE OWNER SANDBOXING
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isSignedIn(); // Allow initial creation during signup
+      allow update: if isOwner(userId);
+      
+      // Recursive access for all store-specific data
       match /{allSubcollections=**} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
-    /**
-     * @description System-wide role definitions.
-     */
-    match /app_roles/{roleId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+    // RIDERS (Shared fleet management)
+    match /riders/{riderId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (resource != null && resource.data.darkStoreId == request.auth.uid);
     }
 
-    /**
-     * @description Admin registry used for DBAC checks.
-     */
+    // ADMIN REGISTRY
     match /app_admins/{userId} {
       allow get: if isSignedIn();
-      allow list, create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Dark store locations (Legacy/Shared model).
-     */
-    match /darkStores/{darkStoreId} {
-      allow get, list: if isMember(resource.data.members) || isAdmin();
-      allow create: if isSignedIn() && (request.resource.data.managerUserId == request.auth.uid || isAdmin());
-      allow update: if resource != null && (hasRole(resource.data.members, 'manager') || isAdmin());
-      allow delete: if isAdmin();
-
-      match /{allSubcollections=**} {
-        allow get, list: if isMember(resource.data.darkStoreMembers) || isAdmin();
-        allow create: if isMember(request.resource.data.darkStoreMembers) || isAdmin();
-        allow update: if resource != null && (hasRole(resource.data.darkStoreMembers, 'manager') || isAdmin());
-        allow delete: if isAdmin();
-      }
-    }
-
-    /**
-     * @description Rider profiles.
-     */
-    match /riders/{riderId} {
-      allow get: if isOwner(riderId) || isAdmin() || (resource != null && isMember(resource.data.darkStoreMemberships));
-      allow list: if isSignedIn(); 
-      allow create: if isSignedIn(); 
-      allow update: if isOwner(riderId) || isAdmin();
-      allow delete: if isOwner(riderId) || isAdmin();
-    }
-
-    /**
-     * @description Global product catalog.
-     */
-    match /products/{productId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Global vendor catalog.
-     */
-    match /vendors/{vendorId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow write: if false; // Only manageable via Firebase Console or special script
     }
   }
 }
