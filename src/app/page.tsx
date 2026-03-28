@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { Loader2, Cpu } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 
 export default function RootPage() {
   const { user, userProfile, isUserLoading } = useUser();
@@ -12,14 +12,9 @@ export default function RootPage() {
 
   useEffect(() => {
     if (!isUserLoading) {
-      if (user) {
-        // Correctly route based on the 'role' field in the user document
-        const role = userProfile?.role || 'store';
-        if (role === 'admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/darkstore/inventory');
-        }
+      if (user && userProfile) {
+        const role = userProfile.role || 'store';
+        router.push(role === 'admin' ? '/admin/dashboard' : '/darkstore/inventory');
       } else {
         router.push('/login');
       }

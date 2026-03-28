@@ -1,144 +1,142 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth, useUser, useFirestore } from '@/firebase';
-import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { recordStoreActivity } from '@/firebase/non-blocking-updates';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fingerprint, User, Key, ShieldCheck, Zap, Loader2 } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { Card, CardContent } from '@/components/ui/card';
+import { Shield, Package, Fingerprint, Activity, Cpu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { StoreLoginForm } from '@/components/auth/StoreLoginForm';
+import { AdminLoginForm } from '@/components/auth/AdminLoginForm';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+
+type PortalType = 'selection' | 'store' | 'admin';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [portal, setPortal] = useState<PortalType>('selection');
   const [mounted, setMounted] = useState(false);
-  const auth = useAuth();
-  const db = useFirestore();
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
-    if (user) {
-      recordStoreActivity(db, user.uid);
-      router.push('/');
+    if (user && userProfile) {
+      router.push(userProfile.role === 'admin' ? '/admin/dashboard' : '/darkstore/inventory');
     }
-  }, [user, router, db]);
+  }, [user, userProfile, router]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    initiateEmailSignIn(auth, email, password).catch((error: any) => {
-      toast({
-        title: "Uplink Terminated",
-        description: "Invalid credentials. Ensure the account is registered in your Firebase Console.",
-        variant: "destructive",
-      });
-    });
-  };
-
-  const handleGuestLogin = () => {
-    initiateAnonymousSignIn(auth).catch((error: any) => {
-      toast({
-        title: "Uplink Terminated",
-        description: "Anonymous access denied. Please contact system admin.",
-        variant: "destructive",
-      });
-    });
-  };
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <Fingerprint className="w-12 h-12 text-primary opacity-20" />
-          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Initializing Link...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden relative">
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/30 rounded-full blur-[160px] animate-pulse" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/20 rounded-full blur-[160px] animate-pulse delay-700" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-10 bg-[radial-gradient(#3B82F6_1px,transparent_1px)] [background-size:40px_40px]" />
+    <div className="min-h-screen bg-[#020810] flex flex-col items-center justify-center p-4 overflow-hidden relative font-mono">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#14ffec_1px,transparent_1px)] [background-size:30px_30px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[160px] animate-pulse" />
       </div>
 
-      <Card className="w-full max-w-md glass-panel border-white/5 relative z-10 shadow-2xl backdrop-blur-2xl">
-        <CardHeader className="text-center space-y-4 pt-8">
-          <div className="mx-auto w-16 h-16 bg-primary/20 rounded-3xl flex items-center justify-center border border-primary/30 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+      {/* System HUD */}
+      <div className="fixed top-8 right-8 flex items-center gap-4 bg-black/40 border border-white/5 p-4 rounded-sm backdrop-blur-md">
+        <div className="flex flex-col items-end">
+          <span className="text-[8px] uppercase tracking-widest text-muted-foreground">Network Integrity</span>
+          <div className="flex items-center gap-2 text-[10px] text-secondary font-bold">
+            <Activity className="w-3 h-3 animate-pulse" /> SYSTEM STATUS: ONLINE
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-5xl z-10">
+        <div className="text-center mb-12 space-y-4">
+          <div className="mx-auto w-16 h-16 bg-primary/20 border border-primary/40 flex items-center justify-center rounded-2xl shadow-[0_0_30px_rgba(20,255,236,0.2)]">
             <Fingerprint className="w-10 h-10 text-primary" />
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-3xl font-bold font-headline tracking-tighter uppercase italic">NEURO-FAST</CardTitle>
-            <CardDescription className="text-[10px] uppercase tracking-[0.4em] text-primary font-bold opacity-80">
-              System Access Interface v2.0
-            </CardDescription>
+          <div>
+            <h1 className="text-4xl font-headline font-black tracking-tighter text-white italic uppercase">NEURO·FAST</h1>
+            <p className="text-[9px] uppercase tracking-[0.5em] text-primary/60 font-bold">Dual-Node Sovereignty Gateway</p>
           </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6 pt-4">
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2 group">
-              <div className="relative">
-                <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  type="email"
-                  placeholder="AGENT IDENTITY"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-sm tracking-wide focus:border-primary/50"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2 group">
-              <div className="relative">
-                <Key className="absolute left-3 top-3 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  type="password"
-                  placeholder="NEURAL KEY"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-sm tracking-wide focus:border-primary/50"
-                  required
-                />
-              </div>
-            </div>
-            <Button type="submit" className="w-full h-12 font-bold uppercase tracking-widest text-sm shadow-lg shadow-primary/20 group">
-              <ShieldCheck className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" /> 
-              ESTABLISH UPLINK
-            </Button>
-          </form>
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex flex-col gap-4 pb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push('/signup')}
-            className="w-full h-10 text-[10px] uppercase font-bold tracking-[0.2em] text-primary hover:bg-primary/5 border border-primary/20"
-          >
-            <Zap className="w-3 h-3 mr-2" /> ENROLL NEW NODE
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            onClick={handleGuestLogin} 
-            className="w-full h-10 text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/10"
-          >
-            ANONYMOUS NEURAL NODE
-          </Button>
-          
-          <p className="text-[8px] text-center text-muted-foreground/40 uppercase tracking-[0.3em] font-mono">
-            SECURED BY NEURO-FAST QUANTUM ENCRYPTION
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-[450px]">
+          <AnimatePresence mode="wait">
+            {portal === 'selection' ? (
+              <>
+                <motion.div
+                  key="store-node"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  onClick={() => setPortal('store')}
+                >
+                  <Card className="h-full tactical-panel cursor-pointer group hover:bg-primary/5 transition-all border-white/10 bg-black/40">
+                    <CardContent className="p-12 flex flex-col items-center text-center justify-center h-full space-y-6">
+                      <div className="w-20 h-20 bg-primary/10 border border-primary/20 flex items-center justify-center rounded-3xl group-hover:scale-110 group-hover:bg-primary/20 transition-all">
+                        <Package className="w-10 h-10 text-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="font-headline text-2xl font-black uppercase tracking-tighter text-white">Store Node Access</h2>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed px-4">
+                          Operational Hub for Dark Store Management, SKU Monitoring, and Fleet Logistics.
+                        </p>
+                      </div>
+                      <div className="text-[8px] font-mono text-primary/40 uppercase tracking-[0.4em] group-hover:text-primary transition-colors">
+                        [ INITIATE OPERATOR LINK ]
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  key="admin-node"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  onClick={() => setPortal('admin')}
+                >
+                  <Card className="h-full tactical-panel cursor-pointer group hover:bg-destructive/5 transition-all border-white/10 bg-black/40 before:bg-destructive/60">
+                    <CardContent className="p-12 flex flex-col items-center text-center justify-center h-full space-y-6">
+                      <div className="w-20 h-20 bg-destructive/10 border border-destructive/20 flex items-center justify-center rounded-3xl group-hover:scale-110 group-hover:bg-destructive/20 transition-all">
+                        <Shield className="w-10 h-10 text-destructive" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="font-headline text-2xl font-black uppercase tracking-tighter text-white">Terminal Admin Access</h2>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed px-4">
+                          Strategic Oversight, Global Telemetry, Multi-Tenant Auditing, and Platform Controls.
+                        </p>
+                      </div>
+                      <div className="text-[8px] font-mono text-destructive/40 uppercase tracking-[0.4em] group-hover:text-destructive transition-colors">
+                        [ ESTABLISH COMMAND UPLINK ]
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </>
+            ) : (
+              <motion.div
+                key="login-form"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="col-span-1 md:col-span-2 flex justify-center"
+              >
+                <Card className="w-full max-w-md tactical-panel bg-black/60 border-primary/20 p-8 shadow-2xl backdrop-blur-3xl">
+                  {portal === 'store' ? (
+                    <StoreLoginForm onBack={() => setPortal('selection')} />
+                  ) : (
+                    <AdminLoginForm onBack={() => setPortal('selection')} />
+                  )}
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-[8px] text-muted-foreground/30 uppercase tracking-[0.4em] font-mono">
+            NEURO-FAST SOVEREIGN GATEWAY // QUANTUM KEY ENCRYPTION ACTIVE
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
