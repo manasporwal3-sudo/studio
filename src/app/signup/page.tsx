@@ -17,7 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Store, User, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap } from 'lucide-react';
+import { Shield, CheckCircle2, ArrowRight, ArrowLeft, Loader2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const signupSchema = z.object({
@@ -30,10 +30,10 @@ const signupSchema = z.object({
   city: z.string().min(2, "City required"),
   address: z.string().min(10, "Address too short"),
   pinCode: z.string().length(6, "PIN must be 6 digits"),
-  gstNumber: z.string().length(15, "GST must be 15 chars").optional().or(z.literal('')),
+  gstNumber: z.string().max(15).optional().or(z.literal('')),
   category: z.string().min(1, "Select category"),
-  expectedOrders: z.coerce.number().min(1),
-  outletsCount: z.coerce.number().min(1),
+  expectedOrders: z.coerce.number().min(1, "Daily orders required"),
+  outletsCount: z.coerce.number().min(1, "Outlets count required"),
   plan: z.enum(["Free", "Pro"]),
   terms: z.boolean().refine(val => val === true, "Must accept terms")
 }).refine(data => data.password === data.confirmPassword, {
@@ -58,8 +58,21 @@ export default function SignupPage() {
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { plan: 'Free', terms: false }
+    defaultValues: { 
+      plan: 'Free', 
+      terms: false,
+      category: '',
+      expectedOrders: 0,
+      outletsCount: 1
+    }
   });
+
+  // Manually register fields that don't have standard inputs
+  useEffect(() => {
+    register('category');
+    register('plan');
+    register('terms');
+  }, [register]);
 
   const formData = watch();
 
@@ -69,7 +82,15 @@ export default function SignupPage() {
     if (step === 2) fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'category', 'expectedOrders', 'outletsCount'];
     
     const isValid = await trigger(fieldsToValidate);
-    if (isValid) setStep(step + 1);
+    if (isValid) {
+      setStep(step + 1);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please complete all tactical fields correctly.",
+      });
+    }
   };
 
   const onSubmit = async (data: SignupFormValues) => {
@@ -103,6 +124,15 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onInvalid = (errors: any) => {
+    console.error("Form Validation Errors:", errors);
+    toast({
+      variant: "destructive",
+      title: "Uplink Denied",
+      description: "Ensure all parameters are valid before initialization.",
+    });
   };
 
   if (!mounted) {
@@ -164,7 +194,7 @@ export default function SignupPage() {
               >
                 {step === 1 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter">OWNER REGISTRATION</h2>
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Owner Registration</h2>
                     <div className="grid gap-4">
                       <div className="space-y-1">
                         <Input placeholder="FULL NAME" {...register('fullName')} className="cyber-input" />
@@ -194,7 +224,7 @@ export default function SignupPage() {
 
                 {step === 2 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter">STORE TELEMETRY</h2>
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Store Telemetry</h2>
                     <div className="grid gap-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -221,18 +251,27 @@ export default function SignupPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-4">
-                        <Select onValueChange={(val) => setValue('category', val)}>
-                          <SelectTrigger className="cyber-input">
-                            <SelectValue placeholder="CATEGORY" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-card border-primary/20">
-                            {["Grocery", "Pharmacy", "Bakery", "Electronics", "Kirana", "Fruits & Veg"].map(cat => (
-                              <SelectItem key={cat} value={cat}>{cat.toUpperCase()}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input type="number" placeholder="DAILY ORDERS" {...register('expectedOrders')} className="cyber-input" />
-                        <Input type="number" placeholder="OUTLETS" {...register('outletsCount')} className="cyber-input" />
+                        <div className="space-y-1">
+                          <Select onValueChange={(val) => setValue('category', val, { shouldValidate: true })} value={formData.category}>
+                            <SelectTrigger className="cyber-input">
+                              <SelectValue placeholder="CATEGORY" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-primary/20">
+                              {["Grocery", "Pharmacy", "Bakery", "Electronics", "Kirana", "Fruits & Veg"].map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat.toUpperCase()}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.category && <p className="text-[10px] text-destructive font-mono">{errors.category.message}</p>}
+                        </div>
+                        <div className="space-y-1">
+                          <Input type="number" placeholder="DAILY ORDERS" {...register('expectedOrders')} className="cyber-input" />
+                          {errors.expectedOrders && <p className="text-[10px] text-destructive font-mono">{errors.expectedOrders.message}</p>}
+                        </div>
+                        <div className="space-y-1">
+                          <Input type="number" placeholder="OUTLETS" {...register('outletsCount')} className="cyber-input" />
+                          {errors.outletsCount && <p className="text-[10px] text-destructive font-mono">{errors.outletsCount.message}</p>}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -240,7 +279,7 @@ export default function SignupPage() {
 
                 {step === 3 && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-headline italic tracking-tighter">NEURAL CONFIRMATION</h2>
+                    <h2 className="text-2xl font-headline italic tracking-tighter uppercase">Neural Confirmation</h2>
                     <Card className="bg-white/5 border-white/5 p-6 space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-[10px] font-mono uppercase">
                         <div><p className="text-muted-foreground">Manager</p><p className="text-primary">{formData.fullName}</p></div>
@@ -253,7 +292,7 @@ export default function SignupPage() {
                       {["Free", "Pro"].map(p => (
                         <div 
                           key={p}
-                          onClick={() => setValue('plan', p as "Free" | "Pro")}
+                          onClick={() => setValue('plan', p as "Free" | "Pro", { shouldValidate: true })}
                           className={cn(
                             "p-4 border cursor-pointer transition-all",
                             formData.plan === p ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(0,212,255,0.2)]" : "border-white/10 hover:border-white/30"
@@ -267,9 +306,18 @@ export default function SignupPage() {
                       ))}
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="terms" onCheckedChange={(val) => setValue('terms', val as boolean)} />
-                      <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer">Accept Node Operator Terms & Conditions</label>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="terms" 
+                          checked={formData.terms}
+                          onCheckedChange={(val) => setValue('terms', val as boolean, { shouldValidate: true })} 
+                        />
+                        <label htmlFor="terms" className="text-[10px] font-mono text-muted-foreground uppercase cursor-pointer">
+                          Accept Node Operator Terms & Conditions
+                        </label>
+                      </div>
+                      {errors.terms && <p className="text-[10px] text-destructive font-mono">{errors.terms.message}</p>}
                     </div>
                   </div>
                 )}
@@ -286,7 +334,7 @@ export default function SignupPage() {
                     </Button>
                   ) : (
                     <Button 
-                      onClick={handleSubmit(onSubmit)} 
+                      onClick={handleSubmit(onSubmit, onInvalid)} 
                       disabled={loading || !formData.terms}
                       className="flex-[2] h-12 font-headline text-[10px] tracking-widest bg-secondary text-black hover:bg-secondary/80 glow-green"
                     >
