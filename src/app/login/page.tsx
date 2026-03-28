@@ -6,9 +6,10 @@ import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fingerprint, User, Key, ShieldCheck, Zap } from 'lucide-react';
+import { Fingerprint, User, Key, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -27,17 +29,35 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    initiateEmailSignIn(auth, email, password);
+    initiateEmailSignIn(auth, email, password).catch((error: any) => {
+      toast({
+        title: "Uplink Terminated",
+        description: "Invalid credentials. Ensure the agent node is registered in the Firebase Console.",
+        variant: "destructive",
+      });
+    });
   };
 
   const handleGuestLogin = () => {
-    initiateAnonymousSignIn(auth);
+    initiateAnonymousSignIn(auth).catch((error: any) => {
+      toast({
+        title: "Uplink Terminated",
+        description: "Anonymous access denied. Please contact system admin.",
+        variant: "destructive",
+      });
+    });
   };
 
   const quickAccess = (email: string, pass: string) => {
     setEmail(email);
     setPassword(pass);
-    initiateEmailSignIn(auth, email, pass);
+    initiateEmailSignIn(auth, email, pass).catch((error: any) => {
+      toast({
+        title: "Trial Link Failed",
+        description: "Credentials mismatch. Verify if 'Email/Password' is enabled in your Firebase Project.",
+        variant: "destructive",
+      });
+    });
   };
 
   if (!mounted) {
