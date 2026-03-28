@@ -12,31 +12,47 @@ import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap } from "lucide-reac
 import { predictDemand } from "@/ai/flows/predict-demand-flow";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 function InventoryContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get('store') || 'BLR-01';
-  const { inventory } = useDarkStoreOS(storeId);
+  const { inventory, isLoading } = useDarkStoreOS(storeId);
   const [simulating, setSimulating] = useState(false);
   const [simResults, setSimResults] = useState<any>(null);
+  const { toast } = useToast();
 
   const runSimulation = async () => {
+    if (!inventory || inventory.length === 0) {
+      toast({
+        title: "Simulation Protocol Aborted",
+        description: "Local Node Inventory is empty. Add SKUs to initialize the predictive brain.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSimulating(true);
     try {
-      // Pick a hot SKU for simulation
+      // Pick a target SKU for simulation (usually the first one in the node)
       const target = inventory[0];
       const result = await predictDemand({
         sku: target.id,
         skuName: target.name,
         currentStock: target.currentStock,
         reorderPoint: target.reorderPoint,
-        sellingPrice: target.unitPrice,
-        costPrice: target.unitPrice * (1 - target.margin),
+        sellingPrice: target.sellingPrice,
+        costPrice: target.costPrice,
         historicalSales: [{ timestamp: new Date().toISOString(), quantity: 15 }]
       });
       setSimResults(result);
     } catch (e) {
       console.error(e);
+      toast({
+        title: "Uplink Terminated",
+        description: "Failed to establish a link with the Demand Intelligence Core.",
+        variant: "destructive",
+      });
     } finally {
       setSimulating(false);
     }
@@ -52,7 +68,7 @@ function InventoryContent() {
         <div className="flex gap-4">
           <Button 
             onClick={runSimulation}
-            disabled={simulating}
+            disabled={simulating || isLoading || inventory.length === 0}
             className="bg-secondary text-black font-headline text-[10px] tracking-widest px-6 glow-green"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -64,36 +80,51 @@ function InventoryContent() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-3 tactical-panel border-none bg-black/40 overflow-hidden">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-white/5 border-white/5">
-                  <TableHead className="text-[10px] uppercase font-mono">Identifier</TableHead>
-                  <TableHead className="text-[10px] uppercase font-mono text-right">Stock</TableHead>
-                  <TableHead className="text-[10px] uppercase font-mono text-right">Runway</TableHead>
-                  <TableHead className="text-[10px] uppercase font-mono">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventory.map((item) => (
-                  <TableRow key={item.id} className="border-white/5 hover:bg-white/5">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm">{item.name}</span>
-                        <span className="text-[9px] font-mono text-muted-foreground">{item.id}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-bold text-lg">{Math.floor(item.currentStock)}</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{Math.floor(item.currentStock / 1.2)}h</TableCell>
-                    <TableCell>
-                      <Badge className={cn(
-                        "text-[9px]",
-                        item.status === 'critical' ? 'bg-destructive' : item.status === 'low' ? 'bg-accent' : 'bg-secondary'
-                      )}>{item.status.toUpperCase()}</Badge>
-                    </TableCell>
+            {isLoading ? (
+              <div className="p-20 flex flex-col items-center justify-center gap-4">
+                <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+                <p className="font-mono text-[10px] uppercase tracking-widest text-primary/60">Scanning Node Mesh...</p>
+              </div>
+            ) : inventory.length === 0 ? (
+              <div className="p-20 flex flex-col items-center justify-center gap-4 text-center">
+                <Package className="w-12 h-12 text-white/5" />
+                <div className="space-y-1">
+                  <p className="font-headline text-sm uppercase tracking-widest text-muted-foreground">No SKUs Detected</p>
+                  <p className="font-mono text-[9px] text-muted-foreground/60 uppercase">Add items via the signup or node command to begin monitoring.</p>
+                </div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-white/5 border-white/5 hover:bg-transparent">
+                    <TableHead className="text-[10px] uppercase font-mono">Identifier</TableHead>
+                    <TableHead className="text-[10px] uppercase font-mono text-right">Stock</TableHead>
+                    <TableHead className="text-[10px] uppercase font-mono text-right">Runway</TableHead>
+                    <TableHead className="text-[10px] uppercase font-mono">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {inventory.map((item) => (
+                    <TableRow key={item.id} className="border-white/5 hover:bg-white/5">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm">{item.name}</span>
+                          <span className="text-[9px] font-mono text-muted-foreground">{item.id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-bold text-lg">{Math.floor(item.currentStock)}</TableCell>
+                      <TableCell className="text-right font-mono text-xs">{Math.floor(item.currentStock / 1.2)}h</TableCell>
+                      <TableCell>
+                        <Badge className={cn(
+                          "text-[9px]",
+                          item.status === 'critical' ? 'bg-destructive' : item.status === 'low' ? 'bg-accent' : 'bg-secondary'
+                        )}>{item.status.toUpperCase()}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
@@ -138,7 +169,7 @@ function InventoryContent() {
 export default function DarkstoreInventoryPage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<div className="font-mono text-xs animate-pulse">Syncing Local Node...</div>}>
+      <Suspense fallback={<div className="font-mono text-xs animate-pulse text-primary tracking-widest uppercase">Syncing Local Node...</div>}>
         <InventoryContent />
       </Suspense>
     </DashboardLayout>
