@@ -30,8 +30,9 @@ import { FloatingChatbot } from './floating-chatbot';
 
 function NavLinks({ role, activeStoreId, pathname, onItemClick }: { role: string, activeStoreId: string, pathname: string, onItemClick?: () => void }) {
   // ADMIN-ONLY SIDEBAR (STRATEGIC OVERSIGHT)
+  // ACTION: "NEURAL HUB" deleted. "ACTIVE DARKSTORES" inserted.
   const adminItems = [
-    { name: 'Store Management', icon: <Server className="w-4 h-4" />, href: '/admin/dashboard' },
+    { name: 'ACTIVE DARKSTORES', icon: <Server className="w-4 h-4" />, href: '/admin/dashboard' },
     { name: 'Fleet Matrix', icon: <Network className="w-4 h-4" />, href: '/riders' },
     { name: 'Sovereign Account', icon: <UserIcon className="w-4 h-4" />, href: '/account' },
   ];

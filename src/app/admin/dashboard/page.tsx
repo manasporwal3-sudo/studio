@@ -65,7 +65,7 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-3xl font-black font-headline tracking-tighter uppercase italic text-white flex items-center gap-3">
               <Server className="w-8 h-8 text-primary glow-cyan" />
-              Store Management
+              Active Darkstores
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.4em] font-bold mt-2">
               Global Node Oversight & Hub Management // Apex v10.5
