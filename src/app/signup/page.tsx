@@ -29,7 +29,8 @@ import {
   Cpu,
   Package,
   Plus,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -124,7 +125,6 @@ export default function SignupPage() {
     const isValid = await trigger(fieldsToValidate as any);
     
     if (isValid) {
-      // Manual secondary check for password mismatch to be 100% sure
       if (step === 1 && passwordValue !== confirmPasswordValue) {
         toast({
           title: "Security Mismatch",
@@ -309,9 +309,9 @@ export default function SignupPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                       {fields.map((field, index) => (
-                        <div key={field.id} className="p-4 bg-white/5 border border-white/5 rounded-sm relative group">
+                        <div key={field.id} className="p-6 bg-white/5 border border-white/5 rounded-sm relative group space-y-4">
                           {index > 0 && (
                             <Button 
                               variant="ghost" 
@@ -322,16 +322,38 @@ export default function SignupPage() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
+                          
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input placeholder="SKU NAME" {...register(`inventory.${index}.name` as const)} className="cyber-input" />
-                            <Input placeholder="SKU CODE (OPTIONAL)" {...register(`inventory.${index}.sku` as const)} className="cyber-input" />
-                            <div className="grid grid-cols-2 gap-4">
-                              <Input type="number" placeholder="STOCK" {...register(`inventory.${index}.currentStock` as const)} className="cyber-input" />
-                              <Input type="number" placeholder="REORDER PT" {...register(`inventory.${index}.reorderPoint` as const)} className="cyber-input" />
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-primary/60 uppercase tracking-widest flex items-center gap-1.5 ml-1">
+                                <Package className="w-3 h-3" /> SKU Product Name
+                              </label>
+                              <Input placeholder="e.g. Organic Milk 1L" {...register(`inventory.${index}.name` as const)} className="cyber-input h-11" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <Input type="number" placeholder="COST PRICE ₹" {...register(`inventory.${index}.costPrice` as const)} className="cyber-input" />
-                              <Input type="number" placeholder="SELL PRICE ₹" {...register(`inventory.${index}.sellingPrice` as const)} className="cyber-input" />
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 ml-1">
+                                <Info className="w-3 h-3" /> SKU Code / ID
+                              </label>
+                              <Input placeholder="OPTIONAL" {...register(`inventory.${index}.sku` as const)} className="cyber-input h-11" />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest ml-1">Current Stock</label>
+                              <Input type="number" placeholder="0" {...register(`inventory.${index}.currentStock` as const)} className="cyber-input h-11" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest ml-1">Reorder Point</label>
+                              <Input type="number" placeholder="5" {...register(`inventory.${index}.reorderPoint` as const)} className="cyber-input h-11" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-secondary/60 uppercase tracking-widest ml-1">Cost Price ₹</label>
+                              <Input type="number" placeholder="0.00" {...register(`inventory.${index}.costPrice` as const)} className="cyber-input h-11 border-secondary/20" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[9px] font-mono text-primary/60 uppercase tracking-widest ml-1">Sell Price ₹</label>
+                              <Input type="number" placeholder="0.00" {...register(`inventory.${index}.sellingPrice` as const)} className="cyber-input h-11 border-primary/20" />
                             </div>
                           </div>
                         </div>
@@ -342,9 +364,9 @@ export default function SignupPage() {
                       type="button" 
                       variant="outline" 
                       onClick={() => append({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' })}
-                      className="w-full border-dashed border-primary/40 text-primary h-12 font-mono text-xs"
+                      className="w-full border-dashed border-primary/40 text-primary h-14 font-headline text-[10px] tracking-[0.2em] uppercase"
                     >
-                      <Plus className="w-4 h-4 mr-2" /> ENROLL ADDITIONAL SKU
+                      <Plus className="w-4 h-4 mr-2" /> Enroll Additional SKU
                     </Button>
                   </div>
                 )}
