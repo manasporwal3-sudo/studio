@@ -150,10 +150,18 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-4 pb-8">
           <Button 
             variant="ghost" 
+            onClick={() => router.push('/signup')}
+            className="w-full h-10 text-[10px] uppercase font-bold tracking-[0.2em] text-primary hover:bg-primary/5 border border-primary/20"
+          >
+            <Zap className="w-3 h-3 mr-2" /> ENROLL NEW NODE
+          </Button>
+          
+          <Button 
+            variant="ghost" 
             onClick={handleGuestLogin} 
             className="w-full h-10 text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/10"
           >
-            <Zap className="w-3 h-3 mr-2" /> ANONYMOUS NEURAL NODE
+            ANONYMOUS NEURAL NODE
           </Button>
           
           <p className="text-[8px] text-center text-muted-foreground/40 uppercase tracking-[0.3em] font-mono">
