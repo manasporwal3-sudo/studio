@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Crosshair, Map, Navigation, ShoppingBag, DollarSign, Activity, Package } from "lucide-react";
+import { Crosshair, Map, Navigation, ShoppingBag, DollarSign, Activity, Package, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -23,13 +23,24 @@ export default function RiderClusterPage() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-12">
+        <div className="border-b border-white/5 pb-8">
+          <div className="flex items-center gap-4 mb-2">
+            <Terminal className="w-6 h-6 text-primary" />
+            <h1 className="font-headline text-3xl font-black uppercase tracking-tighter italic text-white">Field Agent OS</h1>
+          </div>
+          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Mission-Critical Rider Interface // Node Telemetry v10.4</p>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* SKU Scanner Module */}
           <div className="tactical-panel bg-black/40 before:hidden p-8 border border-white/5 h-[400px] flex flex-col justify-between group">
              <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <Crosshair className="w-5 h-5 text-primary" />
-                  <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Optical SKU Scanner</h3>
+                  <div className="flex flex-col">
+                    <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Optical SKU Scanner</h3>
+                    <span className="font-mono text-[8px] text-muted-foreground uppercase">Inventory Verification Engine</span>
+                  </div>
                 </div>
                 <div className="font-mono text-[10px] text-primary/60">V_CORE ACTIVE</div>
              </div>
@@ -67,7 +78,10 @@ export default function RiderClusterPage() {
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
                 <Navigation className="w-5 h-5 text-secondary" />
-                <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Route Pilot v4</h3>
+                <div className="flex flex-col">
+                  <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Route Pilot v4</h3>
+                  <span className="font-mono text-[8px] text-muted-foreground uppercase">AI Navigation Guidance</span>
+                </div>
               </div>
               <Activity className="w-4 h-4 text-secondary animate-pulse" />
             </div>
