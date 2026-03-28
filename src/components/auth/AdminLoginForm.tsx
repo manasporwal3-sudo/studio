@@ -40,6 +40,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           displayName: 'Sovereign Administrator',
           updatedAt: new Date().toISOString()
         };
+        // Non-blocking provisioning - security rules now allow this via token check
         setDocumentNonBlocking(doc(db, 'users', cred.user.uid), masterData, { merge: true });
         setDocumentNonBlocking(doc(db, 'app_admins', cred.user.uid), { uid: cred.user.uid, email, assignedAt: new Date().toISOString() }, { merge: true });
       }
@@ -69,6 +70,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
             updatedAt: new Date().toISOString()
           };
           
+          // These writes will succeed because of the 'isMasterAdmin' token check in rules
           setDocumentNonBlocking(doc(db, 'users', signupCred.user.uid), masterData);
           setDocumentNonBlocking(doc(db, 'app_admins', signupCred.user.uid), { uid: signupCred.user.uid, email, assignedAt: new Date().toISOString() });
           
@@ -151,7 +153,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
 
       <div className="pt-4 text-center space-y-4">
         <p className="text-[9px] font-mono text-muted-foreground/40 uppercase tracking-[0.2em]">
-          NEURO-FAST SOVEREIGN GATEWAY v10.6
+          NEURO-FAST SOVEREIGN GATEWAY v12.0
         </p>
       </div>
     </div>
