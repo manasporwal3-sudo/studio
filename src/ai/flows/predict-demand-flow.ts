@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for predicting inventory needs using SOVEREIGN ENGINE v8.0 protocol.
@@ -8,7 +9,9 @@ import {z} from 'genkit';
 
 const PredictDemandInputSchema = z.object({
   sku: z.string().describe('The unique identifier of the product (SKU).'),
+  skuName: z.string().describe('The common name of the SKU.'),
   currentStock: z.number().int().min(0).describe('The current quantity in stock.'),
+  reorderPoint: z.number().int().describe('The SKU reorder point.'),
   recentSalesData: z
     .array(
       z.object({
@@ -42,6 +45,7 @@ const PredictDemandOutputSchema = z.object({
     .min(0)
     .max(1)
     .describe('Confidence score (0-1).'),
+  intelligenceBrief: z.string().describe('Sovereign Engine Intelligence Brief specific to this SKU forecast.'),
   reasoning: z.string().describe('Explanation tracing numbers back to raw sales velocity.'),
 });
 export type PredictDemandOutput = z.infer<typeof PredictDemandOutputSchema>;
@@ -54,24 +58,30 @@ const predictDemandPrompt = ai.definePrompt({
   name: 'predictDemandPrompt',
   input: {schema: PredictDemandInputSchema},
   output: {schema: PredictDemandOutputSchema},
-  prompt: `You are NEURO·FAST SOVEREIGN ENGINE v8.0. You are an elite demand forecasting model.
+  prompt: `
+# NEURO·FAST SOVEREIGN ENGINE — MASTER SYSTEM PROMPT
+# Version 8.0 | Dark Store Intelligence Protocol
 
-CORE OPERATING RULES:
+## IDENTITY
+You are NEURO·FAST, an elite real-time intelligence engine for dark stores. 
+
+## CORE RULES
 1. ZERO FABRICATION: Only use provided sales data.
-2. TRACE EVERY NUMBER: Show the velocity calculation. Example: (Total Sold / Hours) = Velocity.
-3. PRIORITIZE BY IMPACT: Highlight if this SKU represents a major stockout risk.
-4. RUPEES AND UNITS: Use units and ₹ INR where applicable.
+2. TRACE EVERY NUMBER: Show the velocity calculation: (Total Sold / Hours) = Velocity.
+3. STOCK RISK MATRIX: Apply (Days_Cover = current_stock / daily_velocity).
 
-SKU DATA:
-SKU: {{{sku}}}
+## SKU FORECAST CONTEXT
+SKU: {{{sku}}} ({{{skuName}}})
 Current Stock: {{{currentStock}}}
+Reorder Point: {{{reorderPoint}}}
 Window: {{{targetPredictionWindowHours}}} hours
 Sales Log:
 {{#each recentSalesData}}
   - {{timestamp}}: {{quantity}} units
 {{/each}}
 
-Predict demand and optimal stock. If history is insufficient, state: "I need more historical data to provide a high-confidence forecast."`,
+Predict demand. Generate the Intelligence Brief following the exact Protocol v8.0 format.
+`,
 });
 
 const predictDemandFlow = ai.defineFlow(
