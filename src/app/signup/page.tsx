@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -212,7 +213,7 @@ export default function SignupPage() {
               </div>
               <div>
                 <h1 className="font-headline text-lg tracking-tighter text-white font-black italic uppercase">NEURO·FAST</h1>
-                <p className="text-[9px] font-mono text-primary/60 uppercase tracking-[0.3em]">Sovereign Node v10.1</p>
+                <p className="text-[9px] font-mono text-primary/60 uppercase tracking-[0.3em]">Sovereign Node v10.6</p>
               </div>
             </div>
 
@@ -261,7 +262,7 @@ export default function SignupPage() {
                     <div className="grid gap-6">
                       <div className="p-4 bg-primary/5 border border-primary/20 rounded-sm">
                         <p className="text-[9px] font-mono text-primary uppercase leading-relaxed font-bold">
-                          Admin Hint: Use 'admin@neurofast.io' for Sovereign Command Access.
+                          Admin Hint: Use 'admin@neurofast.io' with 'Manas 123' for Sovereign Command Access.
                         </p>
                       </div>
                       <Input placeholder="OPERATOR FULL NAME" {...register('fullName')} className="cyber-input h-12" />

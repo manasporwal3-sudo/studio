@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Package, Fingerprint, Activity, Cpu, Info, UserPlus } from 'lucide-react';
+import { Shield, Package, Fingerprint, Activity, Cpu, Info, UserPlus, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { StoreLoginForm } from '@/components/auth/StoreLoginForm';
 import { AdminLoginForm } from '@/components/auth/AdminLoginForm';
@@ -53,7 +54,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-4xl font-headline font-black tracking-tighter text-white italic uppercase">NEURO·FAST</h1>
-            <p className="text-[9px] uppercase tracking-[0.5em] text-primary/60 font-bold">Dual-Node Sovereignty Gateway</p>
+            <p className="text-[9px] uppercase tracking-[0.5em] text-primary/60 font-bold">Sovereign Master Gateway</p>
           </div>
         </div>
 
@@ -103,11 +104,11 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <h2 className="font-headline text-2xl font-black uppercase tracking-tighter text-white">Terminal Admin Access</h2>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed px-4">
-                          Strategic Oversight, Global Telemetry, Multi-Tenant Auditing, and Platform Controls.
+                          Strategic Oversight, Global Telemetry, and Sovereign Platform Controls.
                         </p>
                       </div>
                       <div className="text-[8px] font-mono text-destructive/40 uppercase tracking-[0.4em] group-hover:text-destructive transition-colors">
-                        [ ESTABLISH COMMAND UPLINK ]
+                        [ ESTABLISH MASTER UPLINK ]
                       </div>
                     </CardContent>
                   </Card>
@@ -135,11 +136,12 @@ export default function LoginPage() {
 
         <div className="mt-12 flex flex-col items-center gap-6">
           <div className="bg-primary/5 border border-primary/20 p-4 rounded-sm flex items-start gap-3 max-w-md">
-            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <Zap className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-[9px] font-mono text-primary uppercase tracking-widest font-bold">Demo Node Enrollment</p>
+              <p className="text-[9px] font-mono text-primary uppercase tracking-widest font-bold">Sovereign Master Node Access</p>
               <p className="text-[8px] font-mono text-muted-foreground uppercase leading-relaxed">
-                New nodes MUST be initialized at the /signup link using an authorized email vector like 'admin@neurofast.io'.
+                ADMIN: admin@neurofast.io // KEY: Manas 123 <br/>
+                These master credentials will auto-provision the admin terminal on first use.
               </p>
             </div>
           </div>
