@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -22,7 +23,12 @@ export function FloatingChatbot() {
   const db = useFirestore();
   const { inventory } = useDarkStoreOS(user?.uid || 'primary');
   
-  const ridersQuery = useMemoFirebase(() => collection(db, 'riders'), [db]);
+  // Optimized query: Only activate when user is authenticated to prevent permission errors
+  const ridersQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(db, 'riders');
+  }, [db, user]);
+
   const { data: riders } = useCollection(ridersQuery);
 
   useEffect(() => {

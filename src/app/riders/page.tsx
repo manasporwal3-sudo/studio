@@ -39,7 +39,12 @@ export default function RidersPage() {
   const db = useFirestore();
   const { toast } = useToast();
 
-  const ridersQuery = useMemoFirebase(() => collection(db, 'riders'), [db]);
+  // Optimized query: Only activate when user is authenticated to prevent permission errors
+  const ridersQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(db, 'riders');
+  }, [db, user]);
+
   const { data: riders, isLoading } = useCollection(ridersQuery);
 
   const [newRider, setNewRider] = useState({
