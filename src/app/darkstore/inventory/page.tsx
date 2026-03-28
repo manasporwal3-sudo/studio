@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useRef } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
-import { doc, collection, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap, Plus, Trash2, Edit2, AlertCircle } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap, Plus, Trash2, Edit2, AlertCircle, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import Papa from 'papaparse';
 
 function InventoryContent() {
   const { user } = useUser();
@@ -24,6 +25,7 @@ function InventoryContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const [newItem, setNewItem] = useState({
@@ -34,6 +36,37 @@ function InventoryContent() {
     reorderPoint: 5,
     sku: ''
   });
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.uid) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const parsedData = results.data.map((row: any) => ({
+          name: row.Name || row.name || "",
+          sku: row.SKU || row.sku || "",
+          currentStock: Number(row.Stock || row.currentStock || 0),
+          reorderPoint: Number(row["Reorder Point"] || row.reorderPoint || 5),
+          costPrice: Number(row["Cost Price"] || row.costPrice || 0),
+          sellingPrice: Number(row["Selling Price"] || row.sellingPrice || 0),
+          addedAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
+        })).filter(item => item.name);
+        
+        if (parsedData.length > 0) {
+          const colRef = collection(db, 'users', user.uid, 'inventory');
+          parsedData.forEach(item => addDocumentNonBlocking(colRef, item));
+          toast({ 
+            title: "Bulk Mesh Uplink Success", 
+            description: `${parsedData.length} SKUs integrated into local node.` 
+          });
+        }
+      }
+    });
+  };
 
   const handleAddSKU = async () => {
     if (!newItem.name || !user?.uid) return;
@@ -98,10 +131,25 @@ function InventoryContent() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tighter uppercase italic text-primary">Neural Hub</h1>
+          <h1 className="text-3xl font-bold font-headline tracking-tighter uppercase italic text-primary text-glow-cyan">Neural Hub</h1>
           <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">Local Node Inventory Matrix</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
+          <input 
+            type="file" 
+            accept=".csv" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleCsvUpload} 
+          />
+          <Button 
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-secondary/10 text-secondary border border-secondary/20 font-headline text-[10px] tracking-widest px-6 hover:bg-secondary/20"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            BULK IMPORT
+          </Button>
+
           <Button 
             onClick={simulateOrder}
             disabled={isSimulating || isLoading || inventory.length === 0}
@@ -155,7 +203,7 @@ function InventoryContent() {
                 <Package className="w-12 h-12 text-white/5" />
                 <div className="space-y-1">
                   <p className="font-headline text-sm uppercase tracking-widest text-muted-foreground">No SKUs Detected</p>
-                  <p className="font-mono text-[9px] text-muted-foreground/60 uppercase">Initialize items to begin monitoring.</p>
+                  <p className="font-mono text-[9px] text-muted-foreground/60 uppercase">Initialize items or upload CSV to begin monitoring.</p>
                 </div>
               </div>
             ) : (

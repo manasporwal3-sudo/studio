@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Papa from 'papaparse';
 import { 
   Shield, 
   Store, 
@@ -30,7 +31,9 @@ import {
   Package,
   Plus,
   Trash2,
-  Terminal
+  Terminal,
+  Upload,
+  FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +47,6 @@ const inventoryItemSchema = z.object({
 });
 
 const signupSchema = z.object({
-  // Step 1: Owner
   fullName: z.string().min(2, "Full name is required"),
   mobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number (10 digits)"),
   email: z.string().email("Invalid email address"),
@@ -54,15 +56,12 @@ const signupSchema = z.object({
     .regex(/[0-9]/, "Must contain a number")
     .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
   confirmPassword: z.string(),
-  // Step 2: Store
   storeName: z.string().min(2, "Store name is required"),
   city: z.string().min(2, "City is required"),
   address: z.string().min(10, "Full address is required"),
   pinCode: z.string().length(6, "PIN Code must be exactly 6 digits"),
   gstNumber: z.string().length(15, "GST must be 15 characters").optional().or(z.literal('')),
-  // Step 3: Inventory
   inventory: z.array(inventoryItemSchema).min(1, "At least one SKU is required for node activation"),
-  // Step 4: Operational Matrix
   expectedOrders: z.coerce.number().min(1, "Required"),
   outletsCount: z.coerce.number().min(1, "Required"),
   plan: z.enum(["Free", "Pro"]),
@@ -78,6 +77,7 @@ export default function SignupPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
@@ -131,6 +131,38 @@ export default function SignupPage() {
     }
   };
 
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const parsedData = results.data.map((row: any) => ({
+          name: row.Name || row.name || "",
+          sku: row.SKU || row.sku || "",
+          currentStock: Number(row.Stock || row.currentStock || 0),
+          reorderPoint: Number(row["Reorder Point"] || row.reorderPoint || 5),
+          costPrice: Number(row["Cost Price"] || row.costPrice || 0),
+          sellingPrice: Number(row["Selling Price"] || row.sellingPrice || 0),
+        })).filter(item => item.name);
+        
+        if (parsedData.length > 0) {
+          // If the first item is empty (default), remove it
+          if (fields.length === 1 && !fields[0].name) {
+            remove(0);
+          }
+          parsedData.forEach(item => append(item));
+          toast({ 
+            title: "Bulk Mesh Uplink Success", 
+            description: `${parsedData.length} SKUs integrated into node mesh.` 
+          });
+        }
+      }
+    });
+  };
+
   const onSubmit = async (data: SignupFormValues) => {
     setLoading(true);
     try {
@@ -156,10 +188,8 @@ export default function SignupPage() {
         updatedAt: new Date().toISOString()
       };
 
-      // Create profile
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
       
-      // Initialize inventory subcollection
       const invCol = collection(db, 'users', user.uid, 'inventory');
       data.inventory.forEach(item => {
         addDocumentNonBlocking(invCol, {
@@ -179,10 +209,9 @@ export default function SignupPage() {
   };
 
   const onInvalid = (errors: any) => {
-    const errorMessages = Object.values(errors).map((e: any) => e.message || "Invalid input");
     toast({
       title: "Deployment Aborted",
-      description: errorMessages[0] || "Review operational parameters.",
+      description: "Validation failed. Please review all steps for red markers.",
       variant: "destructive"
     });
   };
@@ -197,8 +226,7 @@ export default function SignupPage() {
       </div>
 
       <div className="w-full max-w-5xl tactical-panel border-none shadow-2xl overflow-hidden relative z-10 backdrop-blur-sm">
-        <div className="flex flex-col md:flex-row min-h-[700px]">
-          {/* Progress Sidebar */}
+        <div className="flex flex-col md:flex-row min-h-[750px]">
           <div className="w-full md:w-80 bg-[#060d1c] p-10 border-r border-white/5 space-y-12">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.2)]">
@@ -206,7 +234,7 @@ export default function SignupPage() {
               </div>
               <div>
                 <h1 className="font-headline text-lg tracking-tighter text-white font-black italic">NEURO·FAST</h1>
-                <p className="text-[9px] font-mono text-primary/60 uppercase tracking-[0.3em]">Sovereign Node v10.0</p>
+                <p className="text-[9px] font-mono text-primary/60 uppercase tracking-[0.3em]">Sovereign Node v10.1</p>
               </div>
             </div>
 
@@ -214,7 +242,7 @@ export default function SignupPage() {
               {[
                 { id: 1, label: 'OPERATOR', desc: 'Identity Protocol', icon: <User className="w-4 h-4" /> },
                 { id: 2, label: 'HUB CONFIG', desc: 'Node Coordinates', icon: <Store className="w-4 h-4" /> },
-                { id: 3, label: 'MESH INIT', desc: 'SKU Initialization', icon: <Package className="w-4 h-4" /> },
+                { id: 3, label: 'MESH INIT', desc: 'SKU Optimization', icon: <Package className="w-4 h-4" /> },
                 { id: 4, label: 'DEPLOY', desc: 'Final Calibration', icon: <Cpu className="w-4 h-4" /> }
               ].map((s) => (
                 <div key={s.id} className="flex items-center gap-5 relative">
@@ -235,7 +263,6 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Form Area */}
           <div className="flex-1 p-8 md:p-12 overflow-y-auto max-h-[90vh] custom-scrollbar bg-black/40">
             <AnimatePresence mode="wait">
               <motion.div
@@ -252,12 +279,10 @@ export default function SignupPage() {
                       <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Operator Identity</h2>
                       <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Establish primary node controller profile.</p>
                     </div>
-                    
                     <div className="grid gap-6">
                       <Input placeholder="FULL NAME" {...register('fullName')} className="cyber-input h-12" />
                       <Input placeholder="MOBILE NUMBER (+91)" {...register('mobile')} className="cyber-input h-12" />
                       <Input type="email" placeholder="EMAIL ADDRESS" {...register('email')} className="cyber-input h-12" />
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
                           <Input type="password" placeholder="NEURAL KEY" {...register('password')} className="cyber-input h-12" />
@@ -275,7 +300,6 @@ export default function SignupPage() {
                       <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Hub Coordinates</h2>
                       <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Define physical parameters of the Dark Store node.</p>
                     </div>
-                    
                     <div className="grid gap-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input placeholder="STORE HUB NAME" {...register('storeName')} className="cyber-input h-12" />
@@ -292,12 +316,31 @@ export default function SignupPage() {
 
                 {step === 3 && (
                   <div className="space-y-8">
-                    <div className="space-y-2">
-                      <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Mesh Initialization</h2>
-                      <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Enroll your starting SKUs. This activates the neural analytics layer.</p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="space-y-1">
+                        <h2 className="text-3xl font-headline italic tracking-tighter uppercase text-white font-black">Mesh Initialization</h2>
+                        <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Upload spreadsheet or manual enrollment.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <input 
+                          type="file" 
+                          accept=".csv" 
+                          className="hidden" 
+                          ref={fileInputRef} 
+                          onChange={handleCsvUpload} 
+                        />
+                        <Button 
+                          type="button" 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-secondary/20 text-secondary border border-secondary/30 font-mono text-[9px] tracking-widest uppercase hover:bg-secondary/40"
+                        >
+                          <FileSpreadsheet className="w-3 h-3 mr-2" />
+                          BULK UPLINK (.CSV)
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                       {fields.map((field, index) => (
                         <div key={field.id} className="p-4 bg-white/5 border border-white/5 rounded-sm relative group">
                           {index > 0 && (
@@ -355,7 +398,6 @@ export default function SignupPage() {
                           <Input type="number" placeholder="HUB COUNT" {...register('outletsCount')} className="cyber-input h-12" />
                         </div>
                       </div>
-
                       <div className="space-y-4">
                         <label className="text-[8px] font-mono uppercase text-muted-foreground tracking-widest">PLAN SELECTION</label>
                         <div className="flex gap-4">
@@ -366,7 +408,7 @@ export default function SignupPage() {
                               onClick={() => setValue('plan', p as any)}
                               className={cn(
                                 "flex-1 p-4 tactical-panel transition-all before:hidden flex justify-between items-center",
-                                formData.plan === p ? "bg-primary/20 border-primary" : "bg-white/5 border-white/5"
+                                formData.plan === p ? "bg-primary/20 border-primary shadow-[0_0_15px_rgba(0,212,255,0.2)]" : "bg-white/5 border-white/5"
                               )}
                             >
                               <span className="font-headline text-[10px] uppercase">{p} Node</span>
@@ -375,7 +417,6 @@ export default function SignupPage() {
                           ))}
                         </div>
                       </div>
-
                       <div className="flex items-start space-x-4 p-4 bg-white/5 border border-white/5 rounded-sm">
                         <Checkbox 
                           id="terms" 
