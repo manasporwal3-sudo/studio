@@ -3,8 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN SECURITY RULES — v10.0 GOD MODE
-     * Implements recursive RBAC and multi-tenant sandboxing.
+     * NEURO·FAST SOVEREIGN SECURITY RULES — v11.0 MASTER BOOTSTRAP
+     * Implements master email bypass for bootstrap and recursive RBAC.
      */
 
     // --- GLOBAL HELPERS ---
@@ -13,12 +13,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Admins are defined by their document presence in the app_admins collection
-    // or a role field in their user profile.
+    // Admins are defined by their master email, or document presence in app_admins or users.
+    // This allows admin@neurofast.io to bootstrap the system even if documents aren't yet created.
     function isAdmin() {
       return isSignedIn() && 
-        (exists(/databases/$(database)/documents/app_admins/$(request.auth.uid)) ||
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+        (request.auth.token.email == 'admin@neurofast.io' ||
+         exists(/databases/$(database)/documents/app_admins/$(request.auth.uid)) ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
 
     function isOwner(userId) {
@@ -27,7 +29,7 @@ service cloud.firestore {
 
     // --- COLLECTION RULES ---
 
-    // GLOBAL ACCESS FOR ADMINS
+    // GLOBAL ACCESS FOR ADMINS (Covers collectionGroup queries and platform oversight)
     match /{document=**} {
       allow read, write: if isAdmin();
     }
@@ -54,7 +56,13 @@ service cloud.firestore {
     // ADMIN REGISTRY
     match /app_admins/{userId} {
       allow get: if isSignedIn();
-      allow write: if false; // Only manageable via Firebase Console or special script
+      allow write: if isAdmin(); 
+    }
+    
+    // PLATFORM ACTIVITY (Global logs)
+    match /platform_activity/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn(); // Allow any node to log activity
     }
   }
 }

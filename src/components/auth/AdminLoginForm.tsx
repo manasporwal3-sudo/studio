@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { recordStoreActivity, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
-import Link from 'next/link';
 
 export function AdminLoginForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('admin@neurofast.io');
@@ -32,6 +30,20 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
     try {
       // Attempt standard sign-in
       const cred = await initiateEmailSignIn(auth, email, password);
+      
+      // For the master admin, we ensure the profile documents exist even if they signed in successfully
+      if (isMasterCredential) {
+        const masterData = {
+          uid: cred.user.uid,
+          email: email,
+          role: 'admin',
+          displayName: 'Sovereign Administrator',
+          updatedAt: new Date().toISOString()
+        };
+        setDocumentNonBlocking(doc(db, 'users', cred.user.uid), masterData, { merge: true });
+        setDocumentNonBlocking(doc(db, 'app_admins', cred.user.uid), { uid: cred.user.uid, email, assignedAt: new Date().toISOString() }, { merge: true });
+      }
+
       const validation = await validateAndRoute(db, auth, cred.user.uid, 'admin');
       
       if (validation.success) {
@@ -42,8 +54,8 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
         toast({ title: "Security Override", description: validation.message, variant: "destructive" });
       }
     } catch (error: any) {
-      // If sign-in fails but it's the master credential, attempt auto-provisioning
-      if (isMasterCredential && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found')) {
+      // If sign-in fails but it's the master credential, attempt auto-provisioning via sign-up
+      if (isMasterCredential && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email')) {
         try {
           toast({ title: "Master Link Detected", description: "Provisioning Sovereign Node Identity..." });
           const signupCred = await initiateEmailSignUp(auth, email, password);
