@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -37,7 +36,16 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
         toast({ title: "Security Override Engaged", description: validation.message, variant: "destructive" });
       }
     } catch (error: any) {
-      toast({ title: "Access Denied", description: "Invalid Administrative Credentials.", variant: "destructive" });
+      console.error("Login Error:", error);
+      let errorMsg = "Invalid Administrative Credentials.";
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMsg = "Identity not detected in the mesh. Please sign up first.";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMsg = "Neural Key mismatch. Integrity check failed.";
+      }
+      
+      toast({ title: "Access Denied", description: errorMsg, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +73,7 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
           <Input
             type="email"
-            placeholder="ADMIN ID"
+            placeholder="ADMIN ID (admin@neurofast.io)"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="bg-black/40 border-white/10 pl-10 h-12 font-mono text-xs focus:border-destructive/50"

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { doc, getDoc, Firestore } from 'firebase/firestore';
@@ -23,7 +22,7 @@ export async function validateAndRoute(
     
     if (!userDoc.exists()) {
       await signOut(auth);
-      return { success: false, message: "Node Identity Not Found. Contact System Admin." };
+      return { success: false, message: "Node Identity Not Found in Firestore. Please register first." };
     }
 
     const profile = userDoc.data() as AppUser;
@@ -31,8 +30,8 @@ export async function validateAndRoute(
     if (profile.role !== intendedRole) {
       await signOut(auth);
       const errorMsg = intendedRole === 'admin' 
-        ? "Unauthorized: Node Operator Identity Detected. Access Denied." 
-        : "Access Denied: Admin identity detected. Use Admin Terminal.";
+        ? "Unauthorized: Store Operator identity detected. Use the Store Node portal." 
+        : "Access Denied: Administrative identity detected. Use the Admin Terminal.";
       return { success: false, message: errorMsg };
     }
 

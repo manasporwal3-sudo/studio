@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, Package, Fingerprint, Activity, Cpu, Info } from 'lucide-react';
+import { Shield, Package, Fingerprint, Activity, Cpu, Info, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { StoreLoginForm } from '@/components/auth/StoreLoginForm';
 import { AdminLoginForm } from '@/components/auth/AdminLoginForm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type PortalType = 'selection' | 'store' | 'admin';
 
@@ -132,16 +133,23 @@ export default function LoginPage() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-12 flex flex-col items-center gap-4">
+        <div className="mt-12 flex flex-col items-center gap-6">
           <div className="bg-primary/5 border border-primary/20 p-4 rounded-sm flex items-start gap-3 max-w-md">
             <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-[9px] font-mono text-primary uppercase tracking-widest font-bold">Demo Node Credentials</p>
+              <p className="text-[9px] font-mono text-primary uppercase tracking-widest font-bold">Demo Node Enrollment</p>
               <p className="text-[8px] font-mono text-muted-foreground uppercase leading-relaxed">
-                Admin: admin@neurofast.io // Node: (Signup required for local hub activation)
+                New nodes MUST be initialized at the /signup link using an authorized email vector like 'admin@neurofast.io'.
               </p>
             </div>
           </div>
+          
+          <Link href="/signup">
+            <Button variant="ghost" className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary hover:bg-primary/10">
+              <UserPlus className="w-4 h-4 mr-2" /> Initiate Node Enrollment
+            </Button>
+          </Link>
+
           <p className="text-[8px] text-muted-foreground/30 uppercase tracking-[0.4em] font-mono">
             NEURO-FAST SOVEREIGN GATEWAY // QUANTUM KEY ENCRYPTION ACTIVE
           </p>
