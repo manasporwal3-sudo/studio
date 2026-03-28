@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useUser, useAuth } from '@/firebase';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { 
   Brain, 
   Database, 
@@ -23,18 +23,27 @@ import { STORES } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [activeStore, setActiveStore] = useState(STORES[0]);
+  const searchParams = useSearchParams();
+  
+  const activeStoreId = searchParams.get('store') || STORES[0].id;
+  const activeStore = STORES.find(s => s.id === activeStoreId) || STORES[0];
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  const handleStoreChange = (storeId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('store', storeId);
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const navItems = [
     { name: 'Live Control', icon: <Zap className="w-4 h-4" />, href: '/dashboard' },
@@ -71,10 +80,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {STORES.map(store => (
               <button
                 key={store.id}
-                onClick={() => setActiveStore(store)}
+                onClick={() => handleStoreChange(store.id)}
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all",
-                  activeStore.id === store.id 
+                  activeStoreId === store.id 
                     ? "bg-primary/20 text-primary border border-primary/20" 
                     : "text-muted-foreground hover:bg-white/5"
                 )}
@@ -88,20 +97,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 px-4 space-y-1">
            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 px-2 tracking-widest">Control Panels</p>
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <div className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group",
-                pathname === item.href 
-                  ? "bg-primary/20 text-primary border border-primary/20" 
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white"
-              )}>
-                {item.icon}
-                {item.name}
-                {pathname === item.href && <ChevronRight className="ml-auto w-3 h-3" />}
-              </div>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const hrefWithStore = `${item.href}?store=${activeStoreId}`;
+            return (
+              <Link key={item.href} href={hrefWithStore}>
+                <div className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group",
+                  pathname === item.href 
+                    ? "bg-primary/20 text-primary border border-primary/20" 
+                    : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                )}>
+                  {item.icon}
+                  {item.name}
+                  {pathname === item.href && <ChevronRight className="ml-auto w-3 h-3" />}
+                </div>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-4 border-t border-white/5">
@@ -138,9 +150,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 p-6 md:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden">
-          {React.cloneElement(children as React.ReactElement, { storeId: activeStore.id })}
+          {children}
         </main>
       </div>
     </div>
+  );
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Brain className="w-8 h-8 text-primary animate-pulse" />
+      </div>
+    }>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
   );
 }
