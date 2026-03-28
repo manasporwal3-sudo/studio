@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -20,31 +20,28 @@ export interface UseCollectionResult<T> {
   error: FirestoreError | Error | null;
 }
 
-export interface InternalQuery extends Query<DocumentData> {
-  _query?: {
-    path?: {
-      canonicalString(): string;
-      toString(): string;
-    }
-  }
-}
-
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
  * 
- * IMPORTANT: You MUST memoize the input query using useMemoFirebase or useMemo.
+ * IMPORTANT: Use stable references from useMemoFirebase.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: CollectionReference<DocumentData> | Query<DocumentData> | null | undefined,
 ): UseCollectionResult<T> {
-  type ResultItemType = WithId<T>;
-  type StateDataType = ResultItemType[] | null;
-
-  const [data, setData] = useState<StateDataType>(null);
+  const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  
+  // Track active listener to prevent SDK assertion failures during rapid re-renders
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    // Cleanup existing listener before starting a new one
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -55,36 +52,46 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
+    try {
+      unsubscribeRef.current = onSnapshot(
+        memoizedTargetRefOrQuery,
+        (snapshot: QuerySnapshot<DocumentData>) => {
+          const results: WithId<T>[] = [];
+          snapshot.forEach((doc) => {
+            results.push({ ...(doc.data() as T), id: doc.id });
+          });
+          setData(results);
+          setError(null);
+          setIsLoading(false);
+        },
+        async (err: FirestoreError) => {
+          // Handle permission denied with contextual richness
+          if (err.code === 'permission-denied') {
+            const path = (memoizedTargetRefOrQuery as any).path || 'queried_collection';
+            const contextualError = new FirestorePermissionError({
+              operation: 'list',
+              path,
+            });
+            setError(contextualError);
+            errorEmitter.emit('permission-error', contextualError);
+          } else {
+            setError(err);
+          }
+          setData(null);
+          setIsLoading(false);
         }
-        setData(results);
-        setError(null);
-        setIsLoading(false);
-      },
-      async (err: FirestoreError) => {
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query?.path?.canonicalString() || 'unknown_query';
+      );
+    } catch (e: any) {
+      setError(e);
+      setIsLoading(false);
+    }
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        });
-
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
-        errorEmitter.emit('permission-error', contextualError);
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-    );
-
-    return () => unsubscribe();
+    };
   }, [memoizedTargetRefOrQuery]);
 
   return { data, isLoading, error };

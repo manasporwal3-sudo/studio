@@ -37,11 +37,11 @@ export default function AdminDashboard() {
 
   const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
 
-  // Defensive query construction
+  // Strictly gate query creation to prevent SDK target errors during handshake
   const storesQuery = useMemoFirebase(() => {
-    if (!user || !isMasterAdmin) return null; 
+    if (!user?.uid || !isMasterAdmin || isUserLoading) return null; 
     return query(collection(db, 'users'), where('role', '==', 'store'));
-  }, [db, user?.uid, isMasterAdmin]);
+  }, [db, user?.uid, isMasterAdmin, isUserLoading]);
 
   const { data: allStores, error, isLoading: isStoresLoading } = useCollection(storesQuery);
 
@@ -67,20 +67,21 @@ export default function AdminDashboard() {
         <div className="h-full min-h-[60vh] flex flex-col items-center justify-center font-mono text-destructive gap-4">
           <ShieldAlert className="w-12 h-12 animate-pulse" />
           <div className="text-center">
-            <h2 className="text-xl font-black uppercase tracking-tighter">Apex Access Denied</h2>
-            <p className="text-[10px] opacity-50 uppercase tracking-widest mt-2">Security Policy Violation Detected</p>
+            <h2 className="text-xl font-black uppercase tracking-tighter">Apex Link Failure</h2>
+            <p className="text-[10px] opacity-50 uppercase tracking-widest mt-2">{error.message}</p>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (isUserLoading || (user && isStoresLoading && !allStores)) {
+  // Final gate to ensure all telemetry flows only after full identification
+  if (isUserLoading || (user && !userProfile && isMasterAdmin && isStoresLoading)) {
     return (
       <DashboardLayout>
         <div className="h-full min-h-[60vh] flex items-center justify-center">
           <div className="font-mono text-primary animate-pulse tracking-[0.5em] text-xs uppercase">
-            Initializing Apex Command...
+            Synchronizing Apex Command...
           </div>
         </div>
       </DashboardLayout>
@@ -92,7 +93,8 @@ export default function AdminDashboard() {
       <DashboardLayout>
         <div className="h-full min-h-[60vh] flex flex-col items-center justify-center text-destructive">
           <ShieldAlert className="w-12 h-12 mb-4" />
-          <h2 className="text-xl font-black uppercase">Unauthorized Node</h2>
+          <h2 className="text-xl font-black uppercase tracking-tighter">Access Forbidden</h2>
+          <p className="font-mono text-[10px] mt-2 uppercase tracking-widest opacity-50">Node identity lacks strategic clearance.</p>
         </div>
       </DashboardLayout>
     );

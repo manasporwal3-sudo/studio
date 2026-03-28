@@ -3,9 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN — v15.0 APEX SECURITY PROTOCOL
+     * NEURO·FAST SOVEREIGN — v16.0 SUPREME SECURITY PROTOCOL
      * Implements absolute recursive God-Mode for master administrative identities.
-     * v15.0 adds explicit collectionGroup authorization for global monitoring.
      */
 
     // --- GLOBAL HELPERS ---
@@ -23,7 +22,7 @@ service cloud.firestore {
     }
 
     // --- SUPREME GOD MODE BYPASS ---
-    // Grants absolute recursive read/write access across the entire database including collectionGroups.
+    // Grants absolute recursive read/write access across the entire database.
     match /{allDocuments=**} {
       allow read, write: if isMasterAdmin();
     }
@@ -36,26 +35,19 @@ service cloud.firestore {
     // --- CORE COLLECTION RULES ---
 
     match /users/{userId} {
-      // Allow operators to manage their own node profiles.
       allow get, update: if isSignedIn() && request.auth.uid == userId;
-      // Allow initial enrollment.
       allow create: if isSignedIn();
       
-      // Recursive access for all store-specific subcollections (Inventory, Orders, etc.)
       match /{allSubcollections=**} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
-
-    // --- FLEET & LOGISTICS ---
 
     match /riders/{riderId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
       allow update, delete: if resource != null && (resource.data.darkStoreId == request.auth.uid || isMasterAdmin());
     }
-
-    // --- PLATFORM TELEMETRY ---
 
     match /platform_activity/{logId} {
       allow create: if isSignedIn();
