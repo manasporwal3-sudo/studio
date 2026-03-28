@@ -10,14 +10,18 @@ import { cn } from "@/lib/utils";
 
 export function AiGlobalMonitor() {
   const db = useFirestore();
-  const { user, userProfile } = useUser();
+  const { user, userProfile, isUserLoading } = useUser();
 
+  // Defensive identity check for master admin privileges
   const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
 
   const globalAtRiskQuery = useMemoFirebase(() => {
-    // strictly guard against premature query fire
-    if (!user?.uid || !isMasterAdmin) return null;
+    // strictly guard against premature query fire during auth handshake
+    if (isUserLoading || !user?.uid || !isMasterAdmin) return null;
+    
     try {
+      // Note: This requires a composite index in production. 
+      // If it fails with an index error, check the console for the link.
       return query(
         collectionGroup(db, 'inventory'),
         where('currentStock', '<=', 5),
@@ -25,10 +29,9 @@ export function AiGlobalMonitor() {
         limit(15)
       );
     } catch (e) {
-      console.error("AI Monitor Query Error:", e);
       return null;
     }
-  }, [db, user?.uid, isMasterAdmin]);
+  }, [db, user?.uid, isMasterAdmin, isUserLoading]);
 
   const { data: atRiskItems, isLoading } = useCollection(globalAtRiskQuery);
 
@@ -42,10 +45,10 @@ export function AiGlobalMonitor() {
             <Cpu className="w-4 h-4 text-primary animate-pulse" />
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Neural Risk Detection Active</span>
           </div>
-          {isLoading && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
+          {(isLoading || isUserLoading) && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
         </div>
 
-        {isLoading ? (
+        {isLoading || isUserLoading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-4">
             <RefreshCw className="w-8 h-8 text-primary animate-spin" />
             <p className="font-mono text-[10px] uppercase tracking-widest text-primary/40">Aggregating Global SKU Matrix...</p>

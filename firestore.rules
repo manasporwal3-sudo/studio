@@ -3,9 +3,9 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN — v14.0 APEX SECURITY PROTOCOL
+     * NEURO·FAST SOVEREIGN — v15.0 APEX SECURITY PROTOCOL
      * Implements absolute recursive God-Mode for master administrative identities.
-     * v14.0 adds explicit list authorization for the global user registry.
+     * v15.0 adds explicit collectionGroup authorization for global monitoring.
      */
 
     // --- GLOBAL HELPERS ---
@@ -23,17 +23,17 @@ service cloud.firestore {
     }
 
     // --- SUPREME GOD MODE BYPASS ---
-    // Grants absolute recursive read/write access to the master identity across the entire database.
+    // Grants absolute recursive read/write access across the entire database including collectionGroups.
     match /{allDocuments=**} {
       allow read, write: if isMasterAdmin();
     }
 
-    // --- CORE COLLECTION RULES ---
-
-    match /users {
-      // Explicitly allow listing the users collection for administrative oversight.
-      allow list: if isMasterAdmin();
+    // Explicitly allow collection group queries for the 'inventory' ID.
+    match /{path=**}/inventory/{itemId} {
+      allow read: if isMasterAdmin();
     }
+
+    // --- CORE COLLECTION RULES ---
 
     match /users/{userId} {
       // Allow operators to manage their own node profiles.

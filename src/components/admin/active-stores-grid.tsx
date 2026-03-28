@@ -14,18 +14,21 @@ import { cn } from "@/lib/utils";
 
 export function ActiveStoresGrid() {
   const db = useFirestore();
-  const { user, userProfile } = useUser();
+  const { user, userProfile, isUserLoading } = useUser();
   const router = useRouter();
 
+  const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
+
   const storesQuery = useMemoFirebase(() => {
-    // Defensive check: Only initiate query if authorized
-    if (!user || userProfile?.role !== 'admin') return null;
+    // Defensive check: Only initiate query if authorized and auth is ready
+    if (isUserLoading || !user || !isMasterAdmin) return null;
+    
     return query(
       collection(db, 'users'),
       where('role', '==', 'store'),
       orderBy('lastActive', 'desc')
     );
-  }, [db, user, userProfile?.role]);
+  }, [db, user, isMasterAdmin, isUserLoading]);
 
   const { data: stores, isLoading } = useCollection(storesQuery);
 
@@ -49,7 +52,7 @@ export function ActiveStoresGrid() {
             LIVE NODE MESH TELEMETRY
           </CardTitle>
         </div>
-        {isLoading && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
+        {(isLoading || isUserLoading) && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
       </CardHeader>
       <CardContent className="p-0">
         <Table>
@@ -116,7 +119,7 @@ export function ActiveStoresGrid() {
                 );
               })}
             </AnimatePresence>
-            {!isLoading && (!stores || stores.length === 0) && (
+            {!isLoading && !isUserLoading && (!stores || stores.length === 0) && (
               <TableRow>
                 <TableCell colSpan={4} className="p-12 text-center">
                   <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Awaiting node synchronization...</p>
