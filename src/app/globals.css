@@ -1,90 +1,68 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
+    --background: 220 80% 3%; /* #020810 */
     --foreground: 180 100% 97%;
-    --card: 224 71% 6%;
+    --card: 220 60% 8%; /* #060d1c */
     --card-foreground: 180 100% 97%;
-    --popover: 224 71% 4%;
+    --popover: 220 80% 3%;
     --popover-foreground: 180 100% 97%;
-    --primary: 174 100% 45%;
-    --primary-foreground: 180 100% 10%;
-    --secondary: 84 100% 59%;
-    --secondary-foreground: 180 100% 10%;
-    --muted: 224 30% 20%;
-    --muted-foreground: 180 20% 65%;
-    --accent: 38 100% 50%;
-    --accent-foreground: 180 100% 10%;
-    --destructive: 0 100% 50%;
+    --primary: 190 100% 50%; /* #00d4ff cyan */
+    --primary-foreground: 220 80% 3%;
+    --secondary: 152 100% 50%; /* #00ff88 success */
+    --secondary-foreground: 220 80% 3%;
+    --muted: 220 40% 12%;
+    --muted-foreground: 220 20% 65%;
+    --accent: 190 100% 50%;
+    --accent-foreground: 220 80% 3%;
+    --destructive: 349 100% 59%; /* #ff2d55 danger */
     --destructive-foreground: 180 100% 97%;
-    --border: 180 100% 50% / 0.1;
-    --input: 180 100% 50% / 0.1;
-    --ring: 174 100% 45%;
-    --radius: 0rem;
+    --border: 190 100% 50% / 0.15;
+    --input: 190 100% 50% / 0.1;
+    --ring: 190 100% 50%;
+    --radius: 0.5rem;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
-    @apply bg-background text-foreground font-body antialiased selection:bg-primary/30;
+    @apply bg-background text-foreground font-body antialiased;
     background-image: 
-      radial-gradient(circle at 50% 50%, hsla(174, 100%, 45%, 0.05), transparent 40%),
-      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 100% 100%, 52px 52px, 52px 52px;
+      radial-gradient(circle at 0% 0%, hsla(190, 100%, 50%, 0.05), transparent 40%),
+      radial-gradient(circle at 100% 100%, hsla(152, 100%, 50%, 0.05), transparent 40%),
+      linear-gradient(to right, rgba(255,255,255,0.01) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.01) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
   }
 }
 
-.font-headline { font-family: 'Exo 2', sans-serif; }
-.font-mono { font-family: 'Share Tech Mono', monospace; }
+.font-headline { font-family: 'Orbitron', sans-serif; }
+.font-mono { font-family: 'Space Mono', monospace; }
+.font-body { font-family: 'Syne', sans-serif; }
 
-.tactical-panel {
-  @apply bg-card/40 backdrop-blur-xl border-l-2 border-primary/20 relative overflow-hidden;
-  box-shadow: 0 0 40px -10px rgba(0,0,0,0.5);
+.cyber-panel {
+  @apply bg-card border border-primary/20 relative overflow-hidden;
+  box-shadow: 0 0 30px -10px rgba(0, 212, 255, 0.2);
 }
 
-.tactical-panel::before {
+.cyber-panel::before {
   content: '';
-  @apply absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_15px_rgba(20,255,236,0.8)];
+  @apply absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_15px_rgba(0,212,255,0.8)];
 }
 
-.glow-text-primary { text-shadow: 0 0 10px hsla(174, 100%, 45%, 0.5); }
-.glow-text-secondary { text-shadow: 0 0 10px hsla(84, 100% , 59%, 0.5); }
-.glow-text-accent { text-shadow: 0 0 10px hsla(38, 100% , 50%, 0.5); }
+.glow-cyan { filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5)); }
+.glow-green { filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5)); }
 
-.scan-line {
-  @apply absolute left-0 w-full h-1 bg-primary/50 shadow-[0_0_20px_rgba(20,255,236,1)] z-10 pointer-events-none;
-  animation: scan 3s linear infinite;
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-@keyframes scan {
-  0% { top: 0%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
-}
-
-.radial-bloom {
-  @apply absolute rounded-full blur-[120px] pointer-events-none;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
-.pulse-node {
-  @apply relative flex items-center justify-center;
-}
-
-.pulse-node::after {
-  content: '';
-  @apply absolute w-full h-full rounded-full bg-primary;
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+.animate-loading {
+  animation: loading 1.5s infinite linear;
 }
