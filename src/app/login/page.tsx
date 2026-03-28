@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fingerprint, User, Key, ShieldCheck, Zap } from 'lucide-react';
+import { Fingerprint, User, Key, ShieldCheck, Zap, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -43,18 +42,6 @@ export default function LoginPage() {
       toast({
         title: "Uplink Terminated",
         description: "Anonymous access denied. Please contact system admin.",
-        variant: "destructive",
-      });
-    });
-  };
-
-  const quickAccess = (email: string, pass: string) => {
-    setEmail(email);
-    setPassword(pass);
-    initiateEmailSignIn(auth, email, pass).catch((error: any) => {
-      toast({
-        title: "Trial Link Failed",
-        description: "Credentials mismatch. Verify if 'Email/Password' is enabled in your Firebase Project and these users exist.",
         variant: "destructive",
       });
     });
@@ -125,26 +112,6 @@ export default function LoginPage() {
               ESTABLISH UPLINK
             </Button>
           </form>
-
-          <div className="space-y-3">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
-              <div className="relative flex justify-center text-[10px] uppercase font-bold text-muted-foreground">
-                <span className="bg-[#0D1526] px-3">TRIAL NODE AUTHENTICATION</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1">
-              <Button 
-                variant="outline" 
-                onClick={() => quickAccess('admin@xyz.com', 'AdminPass2024')}
-                className="h-auto py-3 px-2 flex-col items-center gap-1 border-white/5 bg-white/[0.02] hover:bg-primary/10 hover:border-primary/30 transition-all"
-              >
-                <span className="text-[10px] font-bold text-primary">ADMIN ACCESS</span>
-                <span className="text-[8px] opacity-40 font-mono">AdminPass2024</span>
-              </Button>
-            </div>
-          </div>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4 pb-8">

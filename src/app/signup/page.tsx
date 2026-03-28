@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -45,12 +44,17 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
   const db = useFirestore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -100,6 +104,14 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background overflow-hidden relative">
