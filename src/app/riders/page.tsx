@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,10 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   Bike, 
   Plus, 
@@ -24,8 +24,9 @@ import {
   Phone,
   User as UserIcon,
   Loader2,
+  ShieldAlert,
   Clock,
-  ShieldAlert
+  Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from '@/hooks/use-toast';
@@ -49,28 +50,28 @@ export default function RidersPage() {
     zone: '',
     batteryLevel: 100,
     emergencyContact: '',
-    licenseExpiry: ''
+    licenseExpiry: '',
+    joinDate: new Date().toISOString().split('T')[0]
   });
 
   const handleAddRider = async () => {
-    if (!newRider.name || !newRider.mobile || !newRider.vehicleNumber || !newRider.zone) {
-      toast({ variant: "destructive", title: "Missing Parameters", description: "Complete all tactical fields." });
+    if (!newRider.name || !newRider.mobile || !newRider.vehicleNumber) {
+      toast({ variant: "destructive", title: "Incomplete Parameters", description: "All mission-critical fields required." });
       return;
     }
 
     const riderData = {
       ...newRider,
       id: crypto.randomUUID(),
-      joinDate: new Date().toISOString().split('T')[0],
       status: 'idle',
       darkStoreId: user?.uid || 'BLR-01',
       createdAt: new Date().toISOString()
     };
 
     addDocumentNonBlocking(collection(db, 'riders'), riderData);
-    toast({ title: "Node Enrolled", description: "Field agent integrated into the mesh network." });
+    toast({ title: "Node Integrated", description: "Rider integrated into the neural fleet." });
     setIsModalOpen(false);
-    setNewRider({ name: '', mobile: '', vehicleType: 'Electric Scooter', vehicleNumber: '', zone: '', batteryLevel: 100, emergencyContact: '', licenseExpiry: '' });
+    setNewRider({ name: '', mobile: '', vehicleType: 'Electric Scooter', vehicleNumber: '', zone: '', batteryLevel: 100, emergencyContact: '', licenseExpiry: '', joinDate: new Date().toISOString().split('T')[0] });
   };
 
   const filteredRiders = (riders || []).filter(r => {
@@ -99,7 +100,7 @@ export default function RidersPage() {
             <div className="relative flex-1 md:w-80">
               <Search className="absolute left-4 top-3.5 w-4 h-4 text-muted-foreground" />
               <Input 
-                placeholder="SEARCH NODE IDENTIFIER..." 
+                placeholder="SEARCH AGENT..." 
                 className="pl-12 cyber-input h-12" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -120,12 +121,12 @@ export default function RidersPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-6">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
-            <p className="font-mono text-xs uppercase tracking-[0.5em] text-primary/40">Syncing Local Fleet Matrix...</p>
+            <p className="font-mono text-xs uppercase tracking-[0.5em] text-primary/40">Syncing Fleet Matrix...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredRiders.map((rider) => (
-              <Card key={rider.id} className="tactical-panel border-none before:bg-primary/60 transition-all hover:translate-y-[-6px] hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] group">
+              <Card key={rider.id} className="tactical-panel border-none before:bg-primary/60 transition-all hover:translate-y-[-6px] group">
                 <CardHeader className="flex flex-row items-center gap-5 pb-6">
                   <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center relative border border-white/5">
                     <UserIcon className="w-7 h-7 text-primary" />
@@ -137,7 +138,7 @@ export default function RidersPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="font-headline text-sm tracking-widest truncate text-white uppercase">{rider.name}</CardTitle>
-                    <p className="text-[10px] font-mono text-muted-foreground uppercase mt-1">VEHICLE: {rider.vehicleNumber}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground uppercase mt-1">{rider.vehicleType} // {rider.vehicleNumber}</p>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-8">
@@ -147,7 +148,7 @@ export default function RidersPage() {
                         <MapPin className="w-3 h-3 text-muted-foreground" />
                         <span className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest">Zone</span>
                       </div>
-                      <p className="text-[11px] font-mono font-bold text-primary truncate uppercase">{rider.zone}</p>
+                      <p className="text-[11px] font-mono font-bold text-primary truncate uppercase">{rider.zone || 'UNMAPPED'}</p>
                     </div>
                     <div className="p-4 bg-black/40 rounded-sm border border-white/5 space-y-1">
                       <div className="flex items-center gap-2">
@@ -162,14 +163,14 @@ export default function RidersPage() {
                     <div className="flex justify-between items-center text-[10px] font-mono uppercase">
                       <div className="flex items-center gap-2">
                         <Battery className={cn("w-4 h-4", rider.batteryLevel < 20 ? 'text-destructive animate-pulse' : 'text-secondary')} />
-                        <span className="tracking-widest">Battery Node Capacity</span>
+                        <span className="tracking-widest">Node Battery Level</span>
                       </div>
                       <span className={cn("font-bold", rider.batteryLevel < 20 ? 'text-destructive' : 'text-secondary')}>{rider.batteryLevel}%</span>
                     </div>
                     <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                       <div 
                         className={cn("h-full transition-all duration-1000", 
-                          rider.batteryLevel < 20 ? 'bg-destructive shadow-[0_0_10px_rgba(255,45,85,0.5)]' : 
+                          rider.batteryLevel < 20 ? 'bg-destructive' : 
                           rider.batteryLevel < 50 ? 'bg-accent' : 'bg-secondary'
                         )} 
                         style={{ width: `${rider.batteryLevel}%` }}
@@ -180,12 +181,9 @@ export default function RidersPage() {
                   <div className="pt-6 flex justify-between items-center border-t border-white/5">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-[9px] font-mono text-muted-foreground uppercase">SYNCED: {rider.joinDate}</span>
+                      <span className="text-[9px] font-mono text-muted-foreground uppercase">JOINED: {rider.joinDate}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3.5 h-3.5 text-secondary" />
-                      <span className="text-[11px] font-mono text-secondary font-bold">98.4% EFF</span>
-                    </div>
+                    <Badge variant="outline" className="font-mono text-[9px] border-primary/20 text-primary uppercase">{rider.status}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -200,30 +198,25 @@ export default function RidersPage() {
               <Plus className="w-8 h-8" />
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#060d1c] border-primary/20 max-w-2xl p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+          <DialogContent className="bg-[#060d1c] border-primary/20 max-w-2xl p-0 overflow-hidden">
             <div className="bg-primary/10 p-8 border-b border-white/5 flex items-center gap-6">
               <div className="w-16 h-16 bg-primary rounded-sm flex items-center justify-center text-black font-headline font-black text-2xl italic">
                 {newRider.name[0] || '?'}
               </div>
               <div>
                 <DialogTitle className="font-headline italic text-2xl tracking-tighter text-white">ENROLL FIELD AGENT</DialogTitle>
-                <p className="text-[11px] font-mono text-primary uppercase tracking-[0.4em] mt-1">Sovereign Mesh Integration Protocol</p>
+                <p className="text-[11px] font-mono text-primary uppercase tracking-[0.4em] mt-1">Sovereign Mesh Integration</p>
               </div>
             </div>
             
-            <div className="p-10 grid grid-cols-2 gap-8 overflow-y-auto max-h-[70vh] custom-scrollbar">
+            <div className="p-10 grid grid-cols-2 gap-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <Input placeholder="AGENT FULL NAME" value={newRider.name} onChange={e => setNewRider({...newRider, name: e.target.value})} className="cyber-input" />
+              <Input placeholder="MOBILE NODE (+91)" value={newRider.mobile} onChange={e => setNewRider({...newRider, mobile: e.target.value})} className="cyber-input" />
+              
               <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Agent Identity</label>
-                <Input placeholder="FULL NAME" value={newRider.name} onChange={e => setNewRider({...newRider, name: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Mobile Node</label>
-                <Input placeholder="+91 XXXXX XXXXX" value={newRider.mobile} onChange={e => setNewRider({...newRider, mobile: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Vehicle Tech</label>
+                <label className="text-[9px] font-mono text-muted-foreground uppercase">Vehicle Type</label>
                 <Select onValueChange={v => setNewRider({...newRider, vehicleType: v})} value={newRider.vehicleType}>
-                  <SelectTrigger className="cyber-input h-12"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="cyber-input"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#0a1628] border-primary/20">
                     {["Bike", "Scooter", "Electric Scooter", "Cycle", "Van", "Other"].map(v => (
                       <SelectItem key={v} value={v} className="font-mono text-xs uppercase">{v}</SelectItem>
@@ -231,38 +224,28 @@ export default function RidersPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Node ID Plate</label>
-                <Input placeholder="VEHICLE NUMBER" value={newRider.vehicleNumber} onChange={e => setNewRider({...newRider, vehicleNumber: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Tactical Zone</label>
-                <Input placeholder="ZONE / AREA" value={newRider.zone} onChange={e => setNewRider({...newRider, zone: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Emergency Comms</label>
-                <Input placeholder="CONTACT NUMBER" value={newRider.emergencyContact} onChange={e => setNewRider({...newRider, emergencyContact: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">License Termination</label>
-                <Input type="date" value={newRider.licenseExpiry} onChange={e => setNewRider({...newRider, licenseExpiry: e.target.value})} className="cyber-input h-12" />
-              </div>
-              <div className="space-y-6">
+
+              <Input placeholder="PLATE NUMBER" value={newRider.vehicleNumber} onChange={e => setNewRider({...newRider, vehicleNumber: e.target.value})} className="cyber-input self-end" />
+              <Input placeholder="TACTICAL ZONE" value={newRider.zone} onChange={e => setNewRider({...newRider, zone: e.target.value})} className="cyber-input" />
+              <Input placeholder="EMERGENCY COMMS" value={newRider.emergencyContact} onChange={e => setNewRider({...newRider, emergencyContact: e.target.value})} className="cyber-input" />
+              <Input type="date" placeholder="LICENSE EXPIRY" value={newRider.licenseExpiry} onChange={e => setNewRider({...newRider, licenseExpiry: e.target.value})} className="cyber-input" />
+              <Input type="date" placeholder="JOIN DATE" value={newRider.joinDate} onChange={e => setNewRider({...newRider, joinDate: e.target.value})} className="cyber-input" />
+
+              <div className="col-span-2 space-y-6 pt-4">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Battery Calibration</label>
+                  <label className="text-[10px] font-mono uppercase text-muted-foreground tracking-widest">Battery Node Calibration</label>
                   <span className="font-mono text-primary font-bold">{newRider.batteryLevel}%</span>
                 </div>
                 <Slider 
                   value={[newRider.batteryLevel]} 
                   onValueChange={([v]) => setNewRider({...newRider, batteryLevel: v})} 
                   max={100} step={1}
-                  className="mt-2"
                 />
               </div>
             </div>
 
             <div className="p-8 bg-black/40 border-t border-white/5 flex justify-end gap-4">
-              <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="font-mono text-xs uppercase hover:bg-white/5">ABORT</Button>
+              <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="font-mono text-xs uppercase">ABORT</Button>
               <Button onClick={handleAddRider} className="bg-primary text-black font-headline text-[11px] tracking-widest px-10 glow-cyan uppercase">Deploy Node</Button>
             </div>
           </DialogContent>
