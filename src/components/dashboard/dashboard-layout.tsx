@@ -67,13 +67,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <Shield className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <span className="font-headline font-extrabold tracking-tighter text-lg leading-none block">NEURO-FAST</span>
-            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">Tactical OS v4.0</span>
+            <span className="font-headline font-extrabold tracking-tighter text-lg leading-none block">NEURO·FAST</span>
+            <span className="text-[9px] font-mono text-primary/60 tracking-[0.3em] uppercase">SOVEREIGN ENGINE v8.0</span>
           </div>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-8">
-          <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.2em] uppercase">Operation Modules</p>
+          <p className="text-[10px] font-mono font-bold text-muted-foreground mb-4 px-3 tracking-[0.2em] uppercase">Intelligence Modules</p>
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -114,17 +114,17 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <Menu className="w-5 h-5 md:hidden text-muted-foreground" />
             <div className="flex items-center gap-4">
               <div className="px-3 py-1 bg-primary/10 border border-primary/30 rounded-sm">
-                <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest">Active Node: {activeStoreId}</span>
+                <span className="font-mono text-[10px] text-primary font-bold uppercase tracking-widest">Node ID: {activeStoreId}</span>
               </div>
               <h2 className="font-headline text-sm font-extrabold uppercase tracking-[0.2em] text-muted-foreground/60">
-                System_Link // <span className="text-foreground">{navItems.find(i => i.href === pathname)?.name || 'Command'}</span>
+                Hub_Link // <span className="text-foreground">{navItems.find(i => i.href === pathname)?.name || 'Command'}</span>
               </h2>
             </div>
           </div>
           
           <div className="flex items-center gap-8">
              <div className="text-right">
-              <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-[0.3em]">Network Latency</span>
+              <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-[0.3em]">Neural Latency</span>
               <div className="text-xs font-mono text-secondary glow-text-secondary flex items-center justify-end gap-2">
                 <Activity className="w-3 h-3" /> 1.2MS / STABLE
               </div>

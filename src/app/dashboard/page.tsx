@@ -7,7 +7,7 @@ import { STORES } from "@/lib/mock-data";
 import { Zap, Activity, AlertTriangle, TrendingUp, Cpu, Server } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const HealthGauge = ({ value, label }: { value: number, label: string }) => {
+const HealthArc = ({ value, label }: { value: number, label: string }) => {
   const radius = 35;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
@@ -54,7 +54,7 @@ export default function CommandCenter() {
     const actionInterval = setInterval(() => {
       const newAction = {
         id: Date.now(),
-        msg: `Auto-restock threshold met for Node ${STORES[Math.floor(Math.random() * STORES.length)].id}`,
+        msg: `SOVEREIGN AUTO-HEAL: Threshold met for Node ${STORES[Math.floor(Math.random() * STORES.length)].id}. Restoring stock parity.`,
         time: 7,
         type: Math.random() > 0.5 ? 'CRITICAL' : 'OPTIMIZATION'
       };
@@ -72,13 +72,18 @@ export default function CommandCenter() {
       <div className="space-y-12">
         {/* Hub Health Matrix */}
         <section>
-          <div className="flex items-center gap-4 mb-8">
-            <Server className="w-5 h-5 text-primary" />
-            <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">Node Health Matrix</h3>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <Server className="w-5 h-5 text-primary" />
+              <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">Hub Health Matrix</h3>
+            </div>
+            <div className="px-3 py-1 border border-primary/20 bg-primary/5 font-mono text-[10px] text-primary">
+              PROTOCOL: SOVEREIGN ENGINE v8.0
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
             {healthData.map((store) => (
-              <HealthGauge key={store.id} value={Math.round(store.health)} label={store.name} />
+              <HealthArc key={store.id} value={Math.round(store.health)} label={store.name} />
             ))}
           </div>
         </section>
@@ -89,7 +94,7 @@ export default function CommandCenter() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Cpu className="w-5 h-5 text-secondary" />
-                <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">AI Action Stream</h3>
+                <h3 className="font-headline font-bold text-lg uppercase tracking-[0.3em]">Sovereign Action Stream</h3>
               </div>
               <span className="font-mono text-[10px] text-muted-foreground animate-pulse">CYCLING EVERY 7.0S</span>
             </div>
@@ -109,14 +114,14 @@ export default function CommandCenter() {
                     <div className="flex gap-1">
                       {[1,2,3,4,5].map(i => <div key={i} className="w-4 h-1 bg-primary/20" />)}
                     </div>
-                    <span className="font-mono text-[10px] text-muted-foreground">CONFIDENCE: 98.4%</span>
+                    <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Confidence: 99.1%</span>
                   </div>
                 </div>
               ))}
               {actions.length === 0 && (
                 <div className="col-span-2 py-20 border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-4">
                   <Activity className="w-8 h-8 text-white/10 animate-pulse" />
-                  <p className="font-mono text-xs text-muted-foreground tracking-widest uppercase">Initializing Neural Stream...</p>
+                  <p className="font-mono text-xs text-muted-foreground tracking-widest uppercase">Initializing Sovereign Link...</p>
                 </div>
               )}
             </div>
@@ -127,7 +132,7 @@ export default function CommandCenter() {
             <CardHeader className="border-b border-white/5 pb-4">
               <CardTitle className="text-sm font-headline font-bold flex items-center gap-3">
                 <Zap className="w-4 h-4 text-secondary animate-pulse" />
-                SELF-HEALING PROTOCOL
+                SELF-HEALING EVENT LOG
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -148,7 +153,7 @@ export default function CommandCenter() {
               ))}
               {healthData.every(s => s.health >= 90) && (
                 <div className="text-center py-10">
-                  <div className="text-secondary font-mono text-xs font-bold uppercase tracking-widest mb-2">All Nodes Synchronized</div>
+                  <div className="text-secondary font-mono text-xs font-bold uppercase tracking-widest mb-2">Neural Parity Achieved</div>
                   <div className="text-[9px] text-muted-foreground font-mono uppercase">System Optimal</div>
                 </div>
               )}

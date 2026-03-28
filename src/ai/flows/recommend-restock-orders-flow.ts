@@ -1,10 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI-powered assistant that suggests optimal restocking orders.
- *
- * - recommendRestockOrders - A function that handles the restock order recommendation process.
- * - RecommendRestockOrdersInput - The input type for the recommendRestockOrders function.
- * - RecommendRestockOrdersOutput - The return type for the recommendRestockOrders function.
+ * @fileOverview AI-powered procurement assistant using SOVEREIGN ENGINE v8.0 protocol.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,31 +10,31 @@ const RecommendRestockOrdersInputSchema = z.object({
   skus: z
     .array(
       z.object({
-        id: z.string().describe('Unique identifier for the SKU.'),
-        name: z.string().describe('Name of the SKU.'),
-        currentStock: z.number().int().describe('Current stock level of the SKU.'),
+        id: z.string().describe('SKU ID.'),
+        name: z.string().describe('SKU Name.'),
+        currentStock: z.number().int().describe('Current stock.'),
         predictedDemand4Hours: z
           .number()
           .int()
-          .describe('Predicted demand for the SKU over the next 4 hours.'),
+          .describe('Predicted demand (4h).'),
         salesVelocity24Hours: z
           .number()
           .int()
-          .describe('Sales velocity of the SKU over the last 24 hours.'),
+          .describe('Sales velocity (24h).'),
         supplierLeadTimeDays: z
           .number()
           .int()
-          .describe('Lead time from the supplier in days.'),
+          .describe('Lead time in days.'),
         minimumOrderQuantity: z
           .number()
           .int()
-          .describe('Minimum order quantity for this SKU from the supplier.'),
-        unitPrice: z.number().describe('Unit price of the SKU.'),
-        supplierName: z.string().describe('Name of the primary supplier for this SKU.'),
+          .describe('MOQ.'),
+        unitPrice: z.number().describe('Unit price.'),
+        supplierName: z.string().describe('Primary supplier.'),
       })
     )
-    .describe('Array of SKU data for which to recommend restocking orders.'),
-  currentTime: z.string().describe('Current timestamp for context (e.g., ISO string).'),
+    .describe('Array of SKU data.'),
+  currentTime: z.string().describe('Current ISO timestamp.'),
 });
 export type RecommendRestockOrdersInput = z.infer<typeof RecommendRestockOrdersInputSchema>;
 
@@ -46,24 +42,22 @@ const RecommendRestockOrdersOutputSchema = z.object({
   recommendations: z
     .array(
       z.object({
-        skuId: z.string().describe('Unique identifier for the SKU.'),
-        skuName: z.string().describe('Name of the SKU.'),
-        recommendedQuantity: z.number().int().describe('Recommended quantity to order.'),
-        supplierName: z.string().describe('Supplier for the recommended order.'),
+        skuId: z.string().describe('SKU ID.'),
+        skuName: z.string().describe('SKU Name.'),
+        recommendedQuantity: z.number().int().describe('Quantity to order.'),
+        supplierName: z.string().describe('Supplier.'),
         urgency: z
           .enum(['Critical', 'High', 'Medium', 'Low'])
-          .describe('Urgency level of the restock order.'),
+          .describe('Urgency level.'),
         justification: z
           .string()
-          .describe('Explanation for the recommended order and its urgency.'),
+          .describe('Explanation showing calculations (Cost vs Velocity).'),
       })
     )
-    .describe('List of recommended restocking orders.'),
+    .describe('List of restock recommendations.'),
   overallInsights: z
     .string()
-    .describe(
-      'Overall insights and summary of inventory health and suggested procurement strategy.'
-    ),
+    .describe('Summary of hub inventory health in ₹ INR.'),
 });
 export type RecommendRestockOrdersOutput = z.infer<typeof RecommendRestockOrdersOutputSchema>;
 
@@ -77,30 +71,25 @@ const prompt = ai.definePrompt({
   name: 'recommendRestockOrdersPrompt',
   input: {schema: RecommendRestockOrdersInputSchema},
   output: {schema: RecommendRestockOrdersOutputSchema},
-  prompt: `You are an expert AI-powered procurement assistant for a quick-commerce business.
-Your primary goal is to analyze current inventory, predicted demand, sales velocity, and supplier information to suggest optimal restocking orders for the next 4 hours.
-You must prioritize maintaining zero-latency inventory, preventing 'Ghost Stocks', and ensuring product availability for quick delivery.
-Provide clear, actionable recommendations and detailed justifications. Factor in supplier lead times and minimum order quantities to ensure realistic and effective orders.
-Categorize the urgency of each restock recommendation as 'Critical', 'High', 'Medium', or 'Low' based on the potential for stockouts and impact on sales.
-Finally, provide an overall summary of the inventory health and suggest a procurement strategy.
+  prompt: `You are NEURO·FAST SOVEREIGN ENGINE v8.0. You are an elite procurement analytics system.
+
+CORE OPERATING RULES:
+1. ZERO FABRICATION: Never invent supplier lead times or stock levels.
+2. TRACE EVERY NUMBER: Justify every recommendation with (Velocity × Window) logic. Cite ₹ INR for total costs.
+3. PRIORITIZE BY IMPACT: Lead with recommendations that prevent the most significant revenue losses.
+4. SPEAK IN RUPEES: All order values in ₹ INR.
 
 Current time: {{{currentTime}}}
 
-Here is the current SKU data:
+HUB SKU DATA:
 {{#each skus}}
-- SKU ID: {{{id}}}
-  Name: {{{name}}}
-  Current Stock: {{{currentStock}}}
-  Predicted Demand (next 4 hours): {{{predictedDemand4Hours}}}
-  Sales Velocity (last 24 hours): {{{salesVelocity24Hours}}}
-  Supplier Lead Time (days): {{{supplierLeadTimeDays}}}
-  Minimum Order Quantity: {{{minimumOrderQuantity}}}
-  Unit Price: {{{unitPrice}}}
-  Supplier Name: {{{supplierName}}}
+- ID: {{{id}}} | Name: {{{name}}}
+  Stock: {{{currentStock}}} | Velocity (24h): {{{salesVelocity24Hours}}}
+  Lead Time: {{{supplierLeadTimeDays}}}d | MOQ: {{{minimumOrderQuantity}}}
+  Price: ₹{{{unitPrice}}} | Supplier: {{{supplierName}}}
 {{/each}}
 
-Based on this data, generate a list of restocking recommendations and overall insights:
-`,
+Suggest optimal orders. If data for a specific SKU is incomplete, flag it as "Awaiting Data" and skip analysis for that item.`,
 });
 
 const recommendRestockOrdersFlow = ai.defineFlow(
