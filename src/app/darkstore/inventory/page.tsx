@@ -1,23 +1,20 @@
 'use client';
 
-import { useState, Suspense, useRef } from 'react';
+import { useState, Suspense } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
 import { doc, collection } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
-import { Cpu, RefreshCw, Crosshair, Package, TrendingUp, Zap, Plus, Trash2, Edit2, AlertCircle, FileSpreadsheet, Loader2 } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import Papa from 'papaparse';
 
 function InventoryContent() {
   const { user } = useUser();
@@ -26,8 +23,6 @@ function InventoryContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const [newItem, setNewItem] = useState({
@@ -38,47 +33,6 @@ function InventoryContent() {
     reorderPoint: 5,
     sku: ''
   });
-
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const parsedData = results.data.map((row: any) => ({
-          name: row.Name || row.name || "",
-          sku: row.SKU || row.sku || "",
-          currentStock: Number(row.Stock || row.currentStock || 0),
-          reorderPoint: Number(row["Reorder Point"] || row.reorderPoint || 5),
-          costPrice: Number(row["Cost Price"] || row.costPrice || 0),
-          sellingPrice: Number(row["Selling Price"] || row.sellingPrice || 0),
-        })).filter(item => item.name);
-        
-        if (parsedData.length > 0) {
-          setUploadProgress({ current: 0, total: parsedData.length });
-          try {
-            await bulkUploadInventory(db, user.uid, parsedData, (count) => {
-              setUploadProgress(prev => prev ? { ...prev, current: count } : null);
-            });
-            toast({ 
-              title: "Bulk Mesh Uplink Success", 
-              description: `${parsedData.length} SKUs integrated into local node.` 
-            });
-          } catch (e) {
-            toast({ 
-              title: "Uplink Failed", 
-              description: "The batch write protocol was interrupted.",
-              variant: "destructive"
-            });
-          } finally {
-            setUploadProgress(null);
-          }
-        }
-      }
-    });
-  };
 
   const handleAddSKU = async () => {
     if (!newItem.name || !user?.uid) return;
@@ -147,26 +101,6 @@ function InventoryContent() {
           <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">Local Node Inventory Matrix</p>
         </div>
         <div className="flex flex-wrap gap-4">
-          <input 
-            type="file" 
-            accept=".csv" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleCsvUpload} 
-          />
-          <Button 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadProgress !== null}
-            className="bg-secondary/10 text-secondary border border-secondary/20 font-headline text-[10px] tracking-widest px-6 hover:bg-secondary/20"
-          >
-            {uploadProgress ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-            )}
-            {uploadProgress ? "UPLINKING..." : "BULK IMPORT"}
-          </Button>
-
           <Button 
             onClick={simulateOrder}
             disabled={isSimulating || isLoading || inventory.length === 0}
@@ -207,18 +141,6 @@ function InventoryContent() {
         </div>
       </div>
 
-      {uploadProgress && (
-        <Card className="tactical-panel bg-primary/5 border-primary/20 animate-in fade-in slide-in-from-top-2">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] font-bold">Synchronizing Mesh...</span>
-              <span className="font-mono text-[10px] text-primary">{uploadProgress.current} / {uploadProgress.total} SKUs</span>
-            </div>
-            <Progress value={(uploadProgress.current / uploadProgress.total) * 100} className="h-2" />
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-3 tactical-panel border-none bg-black/40 overflow-hidden">
           <CardContent className="p-0">
@@ -232,7 +154,7 @@ function InventoryContent() {
                 <Package className="w-12 h-12 text-white/5" />
                 <div className="space-y-1">
                   <p className="font-headline text-sm uppercase tracking-widest text-muted-foreground">No SKUs Detected</p>
-                  <p className="font-mono text-[9px] text-muted-foreground/60 uppercase">Initialize items or upload CSV to begin monitoring.</p>
+                  <p className="font-mono text-[9px] text-muted-foreground/60 uppercase">Initialize items to begin monitoring.</p>
                 </div>
               </div>
             ) : (

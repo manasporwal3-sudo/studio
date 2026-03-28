@@ -31,8 +31,6 @@ import {
   Package,
   Plus,
   Trash2,
-  Terminal,
-  Upload,
   FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -67,7 +65,7 @@ const signupSchema = z.object({
   plan: z.enum(["Free", "Pro"]),
   terms: z.boolean().refine(val => val === true, "Must accept terms")
 }).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "Neural Keys (passwords) do not match",
   path: ["confirmPassword"]
 });
 
@@ -86,6 +84,7 @@ export default function SignupPage() {
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, trigger, control } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
+    mode: 'onBlur',
     defaultValues: { 
       plan: 'Free', 
       terms: false,
@@ -98,7 +97,8 @@ export default function SignupPage() {
     name: "inventory"
   });
 
-  const password = watch('password', '');
+  const passwordValue = watch('password', '');
+  const confirmPasswordValue = watch('confirmPassword', '');
   const formData = watch();
 
   useEffect(() => {
@@ -115,18 +115,34 @@ export default function SignupPage() {
   };
 
   const handleNext = async () => {
-    let fieldsToValidate: any[] = [];
-    if (step === 1) fieldsToValidate = ['fullName', 'mobile', 'email', 'password', 'confirmPassword'];
-    if (step === 2) fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'gstNumber'];
-    if (step === 3) fieldsToValidate = ['inventory'];
+    let fieldsToValidate: (keyof SignupFormValues | 'inventory')[] = [];
+    if (step === 1) {
+      fieldsToValidate = ['fullName', 'mobile', 'email', 'password', 'confirmPassword'];
+    } else if (step === 2) {
+      fieldsToValidate = ['storeName', 'city', 'address', 'pinCode', 'gstNumber'];
+    } else if (step === 3) {
+      fieldsToValidate = ['inventory'];
+    }
     
-    const isValid = await trigger(fieldsToValidate as any);
-    if (isValid) setStep(step + 1);
-    else {
-      const firstError = Object.keys(errors)[0] as keyof SignupFormValues;
+    // Explicitly validate password match if in step 1
+    if (step === 1 && passwordValue !== confirmPasswordValue) {
       toast({
-        title: "Validation Error",
-        description: errors[firstError]?.message?.toString() || "Please review your entries.",
+        title: "Security Mismatch",
+        description: "Neural Keys (passwords) do not match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const isValid = await trigger(fieldsToValidate as any);
+    if (isValid) {
+      setStep(step + 1);
+    } else {
+      const firstError = Object.keys(errors).find(k => fieldsToValidate.includes(k as any));
+      const errorMsg = firstError ? (errors[firstError as keyof SignupFormValues] as any)?.message : "Please check your entries.";
+      toast({
+        title: "Step Validation Failed",
+        description: errorMsg || "Required identity vectors missing.",
         variant: "destructive"
       });
     }
@@ -207,10 +223,10 @@ export default function SignupPage() {
     }
   };
 
-  const onInvalid = (errors: any) => {
+  const onInvalid = () => {
     toast({
       title: "Deployment Aborted",
-      description: "Validation failed. Please review all steps for red markers.",
+      description: "Validation failed. Please review all steps.",
       variant: "destructive"
     });
   };
@@ -228,11 +244,11 @@ export default function SignupPage() {
         <div className="flex flex-col md:flex-row min-h-[750px]">
           <div className="w-full md:w-80 bg-[#060d1c] p-10 border-r border-white/5 space-y-12">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.2)]">
+              <div className="w-12 h-12 bg-primary/20 border border-primary/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.2)] rounded-sm">
                 <Shield className="text-primary w-7 h-7" />
               </div>
               <div>
-                <h1 className="font-headline text-lg tracking-tighter text-white font-black italic">NEURO·FAST</h1>
+                <h1 className="font-headline text-lg tracking-tighter text-white font-black italic uppercase">NEURO·FAST</h1>
                 <p className="text-[9px] font-mono text-primary/60 uppercase tracking-[0.3em]">Sovereign Node v10.1</p>
               </div>
             </div>
@@ -285,10 +301,15 @@ export default function SignupPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
                           <Input type="password" placeholder="NEURAL KEY" {...register('password')} className="cyber-input h-12" />
-                          <Progress value={getPasswordStrength(password)} className="h-1 mt-2" />
+                          <Progress value={getPasswordStrength(formData.password || '')} className="h-1 mt-2" />
                         </div>
                         <Input type="password" placeholder="CONFIRM KEY" {...register('confirmPassword')} className="cyber-input h-12" />
                       </div>
+                      {(errors.password || errors.confirmPassword) && (
+                        <p className="text-[10px] font-mono text-destructive uppercase">
+                          {errors.password?.message || errors.confirmPassword?.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
