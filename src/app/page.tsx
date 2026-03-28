@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Cpu } from 'lucide-react';
 
 export default function RootPage() {
   const { user, userProfile, isUserLoading } = useUser();
@@ -13,7 +13,8 @@ export default function RootPage() {
   useEffect(() => {
     if (!isUserLoading) {
       if (user) {
-        const role = userProfile?.roleIds?.[0] || 'darkstore';
+        // Correctly route based on the 'role' field in the user document
+        const role = userProfile?.role || 'store';
         if (role === 'admin') {
           router.push('/admin/dashboard');
         } else {
@@ -26,11 +27,14 @@ export default function RootPage() {
   }, [user, userProfile, isUserLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Synchronizing Neural Link...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#020810] gap-6">
+      <div className="relative">
+        <Cpu className="w-12 h-12 text-primary animate-pulse" />
+        <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
       </div>
+      <p className="text-[10px] font-mono text-primary/60 uppercase tracking-[0.6em] animate-pulse">
+        Synchronizing Neural Link...
+      </p>
     </div>
   );
 }
