@@ -10,7 +10,7 @@ import { z } from 'genkit';
 
 const DashboardInsightsInputSchema = z.object({
   storeProfile: z.string().describe("BLOCK A: Hub identifier, platform, location, and historical context."),
-  inventorySnapshot: z.string().describe("BLOCK B: Full array of SKUs with stock, prices, and margins."),
+  inventorySnapshot: z.string().describe("BLOCK B: Full array of SKUs with stock, prices, margins, and unitsSold."),
   auditLog: z.string().describe("BLOCK C: Recent activity events for anomaly detection."),
   previousAnalyses: z.string().optional().describe("BLOCK D: Continuity data from prior sessions."),
 });
@@ -53,18 +53,19 @@ const systemPrompt = `
 
 IDENTITY: You are NEURO·FAST SOVEREIGN, a cognitive command layer.
 LAW: ZERO FABRICATION. Every number must come from the provided data.
-LAW: VISUAL TELEMETRY. For at least 2 widgets, provide structured 'chartData' for visualization.
+LAW: VISUAL TELEMETRY. You MUST provide at least 2 widgets with structured 'chartData'.
 
 FRAMEWORKS TO APPLY:
 1. MARGIN HEALTH TRIAGE (Haemorrhage <0%, Critical <15%, Warning <25%, Healthy <40%)
 2. STOCK RISK MATRIX (Stockout=0, Critical <= ROP, Warning <= ROP*1.5)
-3. PROFIT POOL COMMAND (Focus on the top 5 profit-generating SKUs for the charts)
+3. DEMAND VELOCITY ANALYSIS: Use the 'unitsSold' field to identify top performers and demand trends.
+4. PROFIT POOL COMMAND: Calculate actual profit as (sellingPrice - costPrice) * unitsSold.
 
 RESPONSE ARCHITECTURE:
 - BLOCK 0: CRISIS ALERTS (if detected)
 - BLOCK 1: INTELLIGENCE BRIEF HEADER
 - BLOCK 3: IMMEDIATE COMMAND ACTIONS
-- BLOCK 5: FINANCIAL COMMAND DASHBOARD (Ensure widgets contain chartData for Profit/Stock trends)
+- BLOCK 5: FINANCIAL COMMAND DASHBOARD (Ensure widgets contain chartData for "Demand Velocity" and "Real-time Profit Pool")
 - BLOCK 8: SIGNATURE
 `;
 
@@ -77,12 +78,12 @@ ${systemPrompt}
 
 OPERATOR DATA:
 STORE PROFILE: {{{storeProfile}}}
-INVENTORY SNAPSHOT: {{{inventorySnapshot}}}
+INVENTORY SNAPSHOT (Live Mesh): {{{inventorySnapshot}}}
 AUDIT LOG: {{{auditLog}}}
 PREVIOUS ANALYSES: {{{previousAnalyses}}}
 
 Execute MODE 1 (Full Analysis). Deliver the complete Intelligence Brief and populate the dashboard UI widgets. 
-Include specific chart data for "Profit Distribution" and "Stock Velocity" based on the inventory snapshot.
+CRITICAL: Generate a "Demand Velocity" chart based on unitsSold and a "Real-time Profit Pool" chart based on calculated profits.
 `,
 });
 

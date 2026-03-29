@@ -17,7 +17,7 @@ export function AIInsights() {
   const searchParams = useSearchParams()
   const storeId = searchParams.get('store') || 'PRIMARY-NODE'
   const { user, userProfile } = useUser()
-  const { inventory, isLoading: isInventoryLoading } = useDarkStoreOS(user?.uid || '')
+  const { inventory, revenue, isLoading: isInventoryLoading } = useDarkStoreOS(user?.uid || '')
   
   const [insights, setInsights] = useState<DashboardInsightsOutput | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,10 +39,11 @@ export function AIInsights() {
           store_id: storeId,
           company_name: userProfile?.storeName || "AUTHORIZED HUB",
           platform: "SOVEREIGN APEX NODE",
-          city: userProfile?.city || "Sovereign Hub"
+          city: userProfile?.city || "Sovereign Hub",
+          total_realized_revenue: revenue
         }),
-        inventorySnapshot: JSON.stringify(inventory.slice(0, 20)), // Slice for prompt efficiency
-        auditLog: "SYSTEM: Neural parity check passed. Zero fabrication mode engaged.",
+        inventorySnapshot: JSON.stringify(inventory.sort((a, b) => (b.unitsSold || 0) - (a.unitsSold || 0)).slice(0, 20)),
+        auditLog: `SYSTEM: Autonomous Demand Engine active. Real-time realized revenue: ${revenue}. Neural parity check passed.`,
         previousAnalyses: ""
       }
       const result = await generateDashboardInsights(input)
@@ -66,7 +67,7 @@ export function AIInsights() {
     } finally {
       setLoading(false)
     }
-  }, [storeId, userProfile, inventory])
+  }, [storeId, userProfile, inventory, revenue])
 
   useEffect(() => {
     if (!isInventoryLoading) {

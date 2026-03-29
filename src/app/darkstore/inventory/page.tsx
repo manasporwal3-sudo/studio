@@ -34,7 +34,8 @@ function InventoryContent() {
     costPrice: 0,
     sellingPrice: 0,
     reorderPoint: 5,
-    sku: ''
+    sku: '',
+    unitsSold: 0
   });
 
   // Calculate items needing refill (less than 5)
@@ -77,7 +78,8 @@ function InventoryContent() {
     if (!user?.uid) return;
     setIsExpanding(true);
     try {
-      await bulkUploadInventory(db, user.uid, INITIAL_INVENTORY_MESH, (count) => {
+      const dataToUpload = INITIAL_INVENTORY_MESH.map(item => ({ ...item, unitsSold: 0 }));
+      await bulkUploadInventory(db, user.uid, dataToUpload, (count) => {
         // Progress tracking optional
       });
       recordStoreActivity(db, user.uid);
@@ -113,7 +115,7 @@ function InventoryContent() {
     });
     
     setIsAddModalOpen(false);
-    setNewItem({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' });
+    setNewItem({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '', unitsSold: 0 });
     toast({ title: "SKU Synchronized", description: "Node mesh updated with new data vector." });
   };
 
@@ -162,6 +164,7 @@ function InventoryContent() {
         const docRef = doc(db, 'users', user.uid, 'inventory', item.id);
         updateDocumentNonBlocking(docRef, {
           currentStock: Math.max(0, item.currentStock - 1),
+          unitsSold: (item.unitsSold || 0) + 1,
           lastUpdated: new Date().toISOString()
         });
       });
@@ -279,7 +282,7 @@ function InventoryContent() {
                   <TableRow className="bg-white/5 border-white/5 hover:bg-transparent">
                     <TableHead className="text-[10px] uppercase font-mono">SKU / Identifier</TableHead>
                     <TableHead className="text-[10px] uppercase font-mono text-right">Stock</TableHead>
-                    <TableHead className="text-[10px] uppercase font-mono text-right">Profit Per Unit</TableHead>
+                    <TableHead className="text-[10px] uppercase font-mono text-right">Units Sold</TableHead>
                     <TableHead className="text-[10px] uppercase font-mono">Status</TableHead>
                     <TableHead className="text-[10px] uppercase font-mono text-right">Actions</TableHead>
                   </TableRow>
@@ -294,7 +297,7 @@ function InventoryContent() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono font-bold text-lg">{item.currentStock}</TableCell>
-                      <TableCell className="text-right font-mono text-xs text-secondary">₹{item.sellingPrice - item.costPrice}</TableCell>
+                      <TableCell className="text-right font-mono text-xs text-secondary">{item.unitsSold || 0}</TableCell>
                       <TableCell>
                         <Badge className={cn(
                           "text-[9px]",

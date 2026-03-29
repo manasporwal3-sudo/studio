@@ -15,6 +15,7 @@ export interface InventoryItem {
   status: 'healthy' | 'low' | 'critical';
   unitPrice?: number;
   margin?: number;
+  unitsSold?: number;
 }
 
 export function useDarkStoreOS(storeId: string) {
@@ -50,14 +51,15 @@ export function useDarkStoreOS(storeId: string) {
           ...item,
           margin,
           unitPrice: item.sellingPrice,
-          status
+          status,
+          unitsSold: item.unitsSold || 0
         } as InventoryItem;
       });
       setInventory(processed);
     }
   }, [rawInventory]);
 
-  // Derive trends from actual inventory state (Velocity is 0 if no sales recorded)
+  // Derive trends from actual inventory state (Velocity is derived from unitsSold)
   useEffect(() => {
     if (inventory.length > 0) {
       // Create static baseline for trends based on SKU count
@@ -67,11 +69,12 @@ export function useDarkStoreOS(storeId: string) {
       }));
       setSalesTrends(baselineTrends);
       
-      // Calculate real potential revenue (Stock Value)
+      // Calculate real potential revenue (Stock Value + Sold Value)
       const stockValue = inventory.reduce((acc, item) => acc + (item.sellingPrice * item.currentStock), 0);
-      setRevenue(stockValue);
+      const realizedRevenue = inventory.reduce((acc, item) => acc + (item.sellingPrice * (item.unitsSold || 0)), 0);
+      setRevenue(realizedRevenue);
     }
-  }, [inventory.length]);
+  }, [inventory]);
 
   return { 
     inventory, 
