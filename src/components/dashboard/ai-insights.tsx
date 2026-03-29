@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { generateDashboardInsights, type DashboardInsightsOutput } from "@/ai/flows/generate-dashboard-insights-flow"
 import { useDarkStoreOS } from "@/hooks/use-darkstore-os"
+import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics"
 import { useUser } from "@/firebase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -18,6 +19,7 @@ export function AIInsights() {
   const storeId = searchParams.get('store') || 'PRIMARY-NODE'
   const { user, userProfile } = useUser()
   const { inventory, revenue, isLoading: isInventoryLoading } = useDarkStoreOS(user?.uid || '')
+  const metrics = useDashboardMetrics()
   
   const [insights, setInsights] = useState<DashboardInsightsOutput | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,10 +42,16 @@ export function AIInsights() {
           company_name: userProfile?.storeName || "AUTHORIZED HUB",
           platform: "SOVEREIGN APEX NODE",
           city: userProfile?.city || "Sovereign Hub",
-          total_realized_revenue: revenue
+          total_realized_revenue: revenue,
+          instrument_cluster_telemetry: {
+            realized_profit: metrics.profit,
+            total_deliveries: metrics.deliveries,
+            mesh_efficiency: `${metrics.efficiency}%`,
+            incentive_protocol: metrics.isIncentiveUnlocked ? "ACTIVE" : "LOCKED"
+          }
         }),
         inventorySnapshot: JSON.stringify(inventory.sort((a, b) => (b.unitsSold || 0) - (a.unitsSold || 0)).slice(0, 20)),
-        auditLog: `SYSTEM: Autonomous Demand Engine active. Real-time realized revenue: ${revenue}. Neural parity check passed.`,
+        auditLog: `SYSTEM: Autonomous Demand Engine active. Real-time realized revenue: ${revenue}. Profit Accrual: ${metrics.profit}. Node Efficiency: ${metrics.efficiency}%.`,
         previousAnalyses: ""
       }
       const result = await generateDashboardInsights(input)
@@ -67,15 +75,15 @@ export function AIInsights() {
     } finally {
       setLoading(false)
     }
-  }, [storeId, userProfile, inventory, revenue])
+  }, [storeId, userProfile, inventory, revenue, metrics])
 
   useEffect(() => {
-    if (!isInventoryLoading) {
+    if (!isInventoryLoading && !metrics.isLoading) {
       loadInsights()
     }
-  }, [isInventoryLoading]);
+  }, [isInventoryLoading, metrics.isLoading]);
 
-  if (loading || isInventoryLoading) {
+  if (loading || isInventoryLoading || metrics.isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -118,8 +126,8 @@ export function AIInsights() {
             <Activity className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-headline font-bold text-primary uppercase tracking-[0.4em]">Sovereign Engine v9.0</h2>
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-1">Mode: Deep Telemetry Synthesis</p>
+            <h2 className="text-sm font-headline font-bold text-primary uppercase tracking-[0.4em]">Sovereign Engine v9.5</h2>
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-1">Mode: Instrument Cluster Parallel Sync</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -134,7 +142,7 @@ export function AIInsights() {
         <div className="bg-white/5 px-6 py-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Terminal className="w-4 h-4 text-secondary" />
-            <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-secondary">Intelligence Brief — LIVE MESH</span>
+            <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-secondary">Intelligence Brief — CLUSTER TELEMETRY</span>
           </div>
           {isTyping && <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />}
         </div>

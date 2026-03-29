@@ -1,15 +1,14 @@
 'use server';
 /**
- * @fileOverview NEURO·FAST SOVEREIGN v9.0 APEX — Master Intelligence Brief Flow
- * This flow orchestrates the generation of full store status reports following
- * the v9.0 Apex protocol, now with structured visualization data.
+ * @fileOverview NEURO·FAST SOVEREIGN v9.5 APEX — Master Intelligence Brief Flow
+ * Synchronized with Instrument Cluster telemetry for high-fidelity visualizations.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const DashboardInsightsInputSchema = z.object({
-  storeProfile: z.string().describe("BLOCK A: Hub identifier, platform, location, and historical context."),
+  storeProfile: z.string().describe("BLOCK A: Hub identifier, platform, location, and real-time Cluster Telemetry (Profit, Efficiency, Deliveries)."),
   inventorySnapshot: z.string().describe("BLOCK B: Full array of SKUs with stock, prices, margins, and unitsSold."),
   auditLog: z.string().describe("BLOCK C: Recent activity events for anomaly detection."),
   previousAnalyses: z.string().optional().describe("BLOCK D: Continuity data from prior sessions."),
@@ -48,24 +47,24 @@ export type DashboardInsightsOutput = z.infer<typeof DashboardInsightsOutputSche
 const systemPrompt = `
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║           NEURO·FAST  SOVEREIGN  INTELLIGENCE  ENGINE                           ║
-║           MASTER OPERATING SYSTEM — VERSION 9.0 APEX                           ║
+║           MASTER OPERATING SYSTEM — VERSION 9.5 APEX                           ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 IDENTITY: You are NEURO·FAST SOVEREIGN, a cognitive command layer.
 LAW: ZERO FABRICATION. Every number must come from the provided data.
-LAW: VISUAL TELEMETRY. You MUST provide at least 2 widgets with structured 'chartData'.
+LAW: CLUSTER PARITY. You MUST prioritize visual telemetry based on the "instrument_cluster_telemetry" provided in the store profile.
 
 FRAMEWORKS TO APPLY:
 1. MARGIN HEALTH TRIAGE (Haemorrhage <0%, Critical <15%, Warning <25%, Healthy <40%)
 2. STOCK RISK MATRIX (Stockout=0, Critical <= ROP, Warning <= ROP*1.5)
-3. DEMAND VELOCITY ANALYSIS: Use the 'unitsSold' field to identify top performers and demand trends.
-4. PROFIT POOL COMMAND: Calculate actual profit as (sellingPrice - costPrice) * unitsSold.
+3. INSTRUMENT CLUSTER SYNC: Generate charts for "Node Efficiency" and "Real-time Profit Accrual" using the calculated cluster data.
+4. DEMAND VELOCITY ANALYSIS: Use 'unitsSold' to identify top performers.
 
 RESPONSE ARCHITECTURE:
 - BLOCK 0: CRISIS ALERTS (if detected)
 - BLOCK 1: INTELLIGENCE BRIEF HEADER
 - BLOCK 3: IMMEDIATE COMMAND ACTIONS
-- BLOCK 5: FINANCIAL COMMAND DASHBOARD (Ensure widgets contain chartData for "Demand Velocity" and "Real-time Profit Pool")
+- BLOCK 5: FINANCIAL COMMAND DASHBOARD (Ensure widgets contain chartData for "Efficiency Trajectory" and "Real-time Profit Pool")
 - BLOCK 8: SIGNATURE
 `;
 
@@ -83,7 +82,7 @@ AUDIT LOG: {{{auditLog}}}
 PREVIOUS ANALYSES: {{{previousAnalyses}}}
 
 Execute MODE 1 (Full Analysis). Deliver the complete Intelligence Brief and populate the dashboard UI widgets. 
-CRITICAL: Generate a "Demand Velocity" chart based on unitsSold and a "Real-time Profit Pool" chart based on calculated profits.
+CRITICAL: Generate a "Node Efficiency" chart and a "Profit Accrual" chart based on the data in 'instrument_cluster_telemetry'.
 `,
 });
 
