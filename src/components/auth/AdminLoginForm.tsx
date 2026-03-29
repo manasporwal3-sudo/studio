@@ -70,7 +70,6 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
             updatedAt: new Date().toISOString()
           };
           
-          // These writes will succeed because of the 'isMasterAdmin' token check in rules
           setDocumentNonBlocking(doc(db, 'users', signupCred.user.uid), masterData);
           setDocumentNonBlocking(doc(db, 'app_admins', signupCred.user.uid), { uid: signupCred.user.uid, email, assignedAt: new Date().toISOString() });
           
@@ -80,14 +79,13 @@ export function AdminLoginForm({ onBack }: { onBack: () => void }) {
           return;
         } catch (signupError: any) {
           toast({ title: "Provisioning Failure", description: signupError.message, variant: "destructive" });
+          return;
         }
       }
 
       let errorMsg = "Identity not detected in the mesh.";
-      if (error.code === 'auth/wrong-password') {
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMsg = "Neural Key mismatch. Integrity check failed.";
-      } else if (error.code === 'auth/invalid-credential') {
-        errorMsg = "Invalid credentials. For Admin, use admin@neurofast.io / Manas 123.";
       }
       
       toast({ title: "Access Denied", description: errorMsg, variant: "destructive" });

@@ -78,14 +78,14 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
           return;
         } catch (signupError: any) {
           toast({ title: "Provisioning Failure", description: signupError.message, variant: "destructive" });
+          return;
         }
       }
 
-      console.error("Login Error:", error);
       let errorMsg = "Invalid Hub Credentials.";
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-        errorMsg = "Identity not detected in the mesh. Ensure node enrollment is complete at /signup.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMsg = "Identity not detected or key mismatch. Ensure node enrollment is complete.";
       }
       
       toast({ 
