@@ -64,10 +64,19 @@
 
 @keyframes scan {
   0% { transform: translateY(-100%); }
-  100% { transform: translateY(400px); }
+  100% { transform: translateY(100vh); }
 }
 
 .scan-line {
-  @apply absolute top-0 left-0 w-full h-1 bg-primary/40 shadow-[0_0_15px_rgba(0,212,255,0.8)] z-10;
-  animation: scan 3s infinite linear;
+  @apply fixed top-0 left-0 w-full h-1 bg-primary/20 shadow-[0_0_15px_rgba(0,212,255,0.5)] z-[100] pointer-events-none;
+  animation: scan 8s infinite linear;
+}
+
+.scanning-effect {
+  @apply relative;
+}
+
+.scanning-effect::after {
+  content: "";
+  @apply absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none z-[101];
 }

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, Eye, Mail, Server, RefreshCw } from "lucide-react";
+import { Activity, Eye, Mail, Server, RefreshCw, Network } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,6 @@ export function ActiveStoresGrid() {
   const isMasterAdmin = user?.email === 'admin@neurofast.io' || userProfile?.role === 'admin';
 
   const storesQuery = useMemoFirebase(() => {
-    // Defensive check: Only initiate query if authorized and auth is ready
     if (isUserLoading || !user || !isMasterAdmin) return null;
     
     return query(
@@ -47,14 +46,31 @@ export function ActiveStoresGrid() {
     <Card className="tactical-panel border-none bg-black/40 overflow-hidden before:bg-primary/20">
       <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
         <div className="flex items-center gap-3">
-          <Activity className="w-4 h-4 text-primary" />
+          <Network className="w-4 h-4 text-primary" />
           <CardTitle className="text-[10px] font-headline tracking-[0.2em] text-white uppercase">
-            LIVE NODE MESH TELEMETRY
+            LIVE NETWORK NODE MESH
           </CardTitle>
         </div>
         {(isLoading || isUserLoading) && <RefreshCw className="w-3 h-3 text-primary animate-spin" />}
       </CardHeader>
       <CardContent className="p-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6 bg-white/[0.02]">
+           {stores?.map((store) => {
+             const online = isOnline(store.lastActive);
+             return (
+               <div key={store.id} className="relative group flex flex-col items-center justify-center p-4 tactical-panel before:hidden border-white/5 bg-black/40 hover:bg-primary/5 transition-all cursor-pointer" onClick={() => handleGhostTunnel(store.uid)}>
+                  <div className={cn(
+                    "w-3 h-3 rounded-full mb-3",
+                    online ? "bg-secondary shadow-[0_0_10px_#00ff88] animate-pulse" : "bg-destructive shadow-[0_0_5px_red] opacity-40"
+                  )} />
+                  <span className="font-headline text-[8px] text-white uppercase text-center truncate w-full">{store.storeName || 'HUB'}</span>
+                  <div className="absolute top-1 right-1">
+                    <div className={cn("w-1 h-1 rounded-full", online ? "bg-secondary" : "bg-destructive")} />
+                  </div>
+               </div>
+             )
+           })}
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-white/5 border-white/5 hover:bg-transparent">
