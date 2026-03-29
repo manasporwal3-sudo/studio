@@ -1,26 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Crosshair, Map, Navigation, ShoppingBag, DollarSign, Activity, Package, Terminal, ShieldCheck, ShieldAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Map, Navigation, Activity, Terminal, ShieldCheck, ShieldAlert } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
 import { cn } from "@/lib/utils";
 
 export default function RiderClusterPage() {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannedItem, setScannedItem] = useState<null | {id: string, name: string}>(null);
   const { profit, deliveries, efficiency, isIncentiveUnlocked, isLoading } = useDashboardMetrics();
-
-  const handleScan = () => {
-    setIsScanning(true);
-    setScannedItem(null);
-    setTimeout(() => {
-      setIsScanning(false);
-      setScannedItem({ id: 'SKU-001', name: 'Organic Milk (1L)' });
-    }, 3000);
-  };
 
   return (
     <DashboardLayout>
@@ -44,50 +30,9 @@ export default function RiderClusterPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* SKU Scanner Module */}
-          <div className="tactical-panel bg-black/40 before:hidden p-8 border border-white/5 h-[400px] flex flex-col justify-between group">
-             <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <Crosshair className="w-5 h-5 text-primary" />
-                  <div className="flex flex-col">
-                    <h3 className="font-headline font-bold text-sm uppercase tracking-widest">Optical SKU Scanner</h3>
-                    <span className="font-mono text-[8px] text-muted-foreground uppercase">Inventory Verification Engine</span>
-                  </div>
-                </div>
-                <div className="font-mono text-[10px] text-primary/60">V_CORE ACTIVE</div>
-             </div>
-
-             <div className="flex-1 relative border border-white/5 bg-black/60 overflow-hidden flex items-center justify-center">
-                {isScanning && <div className="scan-line" />}
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:10px_10px]" />
-                
-                {scannedItem ? (
-                  <div className="text-center animate-in fade-in zoom-in duration-500">
-                    <Package className="w-12 h-12 text-secondary mx-auto mb-4" />
-                    <div className="font-mono text-xs text-muted-foreground uppercase mb-1">SKU_IDENTIFIED</div>
-                    <div className="font-headline font-extrabold text-xl text-secondary">{scannedItem.name}</div>
-                    <div className="font-mono text-xs mt-2 text-primary">{scannedItem.id}</div>
-                  </div>
-                ) : (
-                  <div className="text-center opacity-40 group-hover:opacity-100 transition-opacity">
-                    <ShoppingBag className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                    <p className="font-mono text-[10px] uppercase tracking-widest">Awaiting Frame Alignment</p>
-                  </div>
-                )}
-             </div>
-
-             <Button 
-               onClick={handleScan}
-               disabled={isScanning}
-               className="w-full h-12 font-mono text-xs uppercase tracking-[0.2em] mt-6"
-             >
-               {isScanning ? 'Synchronizing Opticals...' : 'Initiate Scan'}
-             </Button>
-          </div>
-
+        <div className="grid grid-cols-1 gap-8">
           {/* Dynamic Route Pilot */}
-          <div className="tactical-panel bg-black/40 before:hidden p-8 border border-white/5 flex flex-col justify-between">
+          <div className="tactical-panel bg-black/40 before:hidden p-8 border border-white/5 flex flex-col justify-between min-h-[300px]">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
                 <Navigation className="w-5 h-5 text-secondary" />
