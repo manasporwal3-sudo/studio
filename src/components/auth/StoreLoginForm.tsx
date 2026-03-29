@@ -1,16 +1,16 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useAuth, useFirestore } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { validateAndRoute } from '@/services/auth-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, User, Key, Loader2, ArrowLeft, Cpu } from 'lucide-react';
+import { Package, User, Key, Loader2, ArrowLeft, Cpu, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { recordStoreActivity } from '@/firebase/non-blocking-updates';
+import { recordStoreActivity, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc } from 'firebase/firestore';
 
 export function StoreLoginForm({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
@@ -25,18 +25,62 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
     e.preventDefault();
     setIsLoading(true);
 
+    const isMasterCredential = email === 'admin@neurofast.io' && password === 'Manas 123';
+
     try {
+      // Attempt standard sign-in
       const cred = await initiateEmailSignIn(auth, email, password);
-      const validation = await validateAndRoute(db, auth, cred.user.uid, 'store');
+      
+      // For the master admin, we ensure the profile documents exist
+      if (isMasterCredential) {
+        const masterData = {
+          uid: cred.user.uid,
+          email: email,
+          role: 'admin',
+          displayName: 'Sovereign Administrator',
+          updatedAt: new Date().toISOString()
+        };
+        setDocumentNonBlocking(doc(db, 'users', cred.user.uid), masterData, { merge: true });
+        setDocumentNonBlocking(doc(db, 'app_admins', cred.user.uid), { uid: cred.user.uid, email, assignedAt: new Date().toISOString() }, { merge: true });
+      }
+
+      const validation = await validateAndRoute(db, auth, cred.user.uid, isMasterCredential ? 'admin' : 'store');
       
       if (validation.success) {
         recordStoreActivity(db, cred.user.uid);
-        toast({ title: "Uplink Established", description: "Node authorized. Synchronizing local mesh." });
-        router.push('/darkstore/inventory');
+        toast({ title: "Uplink Established", description: isMasterCredential ? "Master Admin Authorization Confirmed." : "Node authorized. Synchronizing local mesh." });
+        router.push(isMasterCredential ? '/admin/dashboard' : '/darkstore/inventory');
       } else {
         toast({ title: "Security Protocol Locked", description: validation.message, variant: "destructive" });
       }
     } catch (error: any) {
+      // If sign-in fails but it's the master credential, attempt auto-provisioning via sign-up
+      if (isMasterCredential && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email')) {
+        try {
+          toast({ title: "Master Link Detected", description: "Provisioning Sovereign Node Identity..." });
+          const signupCred = await initiateEmailSignUp(auth, email, password);
+          
+          const masterData = {
+            uid: signupCred.user.uid,
+            email: email,
+            role: 'admin',
+            displayName: 'Sovereign Administrator',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          
+          setDocumentNonBlocking(doc(db, 'users', signupCred.user.uid), masterData);
+          setDocumentNonBlocking(doc(db, 'app_admins', signupCred.user.uid), { uid: signupCred.user.uid, email, assignedAt: new Date().toISOString() });
+          
+          recordStoreActivity(db, signupCred.user.uid);
+          toast({ title: "God-Mode Activated", description: "Administrative terminal initialized successfully." });
+          router.push('/admin/dashboard');
+          return;
+        } catch (signupError: any) {
+          toast({ title: "Provisioning Failure", description: signupError.message, variant: "destructive" });
+        }
+      }
+
       console.error("Login Error:", error);
       let errorMsg = "Invalid Hub Credentials.";
       

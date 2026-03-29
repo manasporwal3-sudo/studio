@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN — v16.0 SUPREME SECURITY PROTOCOL
+     * NEURO·FAST SOVEREIGN — v17.0 SUPREME SECURITY PROTOCOL
      * Implements absolute recursive God-Mode for master administrative identities.
      */
 
@@ -27,6 +27,11 @@ service cloud.firestore {
       allow read, write: if isMasterAdmin();
     }
 
+    // Explicitly allow collection listing for the master admin to populate the dashboard matrix.
+    match /users {
+      allow list: if isMasterAdmin();
+    }
+
     // Explicitly allow collection group queries for the 'inventory' ID.
     match /{path=**}/inventory/{itemId} {
       allow read: if isMasterAdmin();
@@ -35,11 +40,12 @@ service cloud.firestore {
     // --- CORE COLLECTION RULES ---
 
     match /users/{userId} {
-      allow get, update: if isSignedIn() && request.auth.uid == userId;
+      allow get, update: if isSignedIn() && (request.auth.uid == userId || isMasterAdmin());
       allow create: if isSignedIn();
+      allow list: if isMasterAdmin();
       
       match /{allSubcollections=**} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
+        allow read, write: if (isSignedIn() && request.auth.uid == userId) || isMasterAdmin();
       }
     }
 
