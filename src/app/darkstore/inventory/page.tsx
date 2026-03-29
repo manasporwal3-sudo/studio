@@ -102,18 +102,22 @@ function InventoryContent() {
     toast({ title: "SKU Terminated", description: "Item removed from the neural matrix." });
   };
 
-  // Autonomous Demand Engine Logic
+  // Autonomous Demand Engine Logic - High Velocity (2-3s)
   const processAutomatedOrder = useCallback(async () => {
     if (!inventory || inventory.length === 0 || !user?.uid) return;
 
-    // Simulate a "Neural Demand Burst" (1-3 random SKUs)
-    const basketSize = Math.floor(Math.random() * 3) + 1;
+    // Simulate a "Neural Demand Burst" (1-2 random SKUs for high frequency)
+    const basketSize = Math.floor(Math.random() * 2) + 1;
     const basket: InventoryItem[] = [];
     
+    // Efficiency: Sort and pick items with stock
+    const availableItems = inventory.filter(i => i.currentStock > 0);
+    if (availableItems.length === 0) return;
+
     for(let i = 0; i < basketSize; i++) {
-      const randomIndex = Math.floor(Math.random() * inventory.length);
-      const target = inventory[randomIndex];
-      if (target.currentStock > 0 && !basket.find(b => b.id === target.id)) {
+      const randomIndex = Math.floor(Math.random() * availableItems.length);
+      const target = availableItems[randomIndex];
+      if (!basket.find(b => b.id === target.id)) {
         basket.push(target);
       }
     }
@@ -130,30 +134,28 @@ function InventoryContent() {
       recordStoreActivity(db, user.uid);
       logPlatformActivity(db, {
         type: 'order',
-        message: `AUTO_DEMAND_FULFILLED: ${basket.length} SKUs processed.`,
+        message: `AUTO_FULFILL: ${basket.map(b => b.name).join(', ')}`,
         storeId: userProfile?.storeName || user.uid,
         impact: 'NOMINAL'
       });
 
       toast({ 
-        title: "Autonomous Order Processed", 
-        description: `Deducted stock for: ${basket.map(b => b.name).join(', ')}`,
-        className: "bg-secondary/10 border-secondary/30 text-secondary"
+        title: "Autonomous Fulfillment", 
+        description: `Order fulfilled for: ${basket.map(b => b.name).join(', ')}`,
+        className: "bg-[#060d1c] border-primary/30 text-primary font-mono text-[10px] uppercase tracking-widest",
+        duration: 2000
       });
     }
   }, [inventory, user?.uid, userProfile?.storeName, db, toast]);
 
-  // Set up the autonomous processor heartbeat
+  // Set up the high-velocity autonomous processor heartbeat
   useEffect(() => {
     if (isLoading || inventory.length === 0) return;
 
-    // Trigger every 30 seconds with a bit of randomness
+    // Trigger every 2 to 3 seconds
     const interval = setInterval(() => {
-      const chance = Math.random();
-      if (chance > 0.3) { // 70% chance to process an order every pulse
-        processAutomatedOrder();
-      }
-    }, 30000);
+      processAutomatedOrder();
+    }, 2500);
 
     return () => clearInterval(interval);
   }, [inventory.length, isLoading, processAutomatedOrder]);
@@ -168,7 +170,7 @@ function InventoryContent() {
         <div className="flex flex-wrap gap-4">
           <Badge variant="outline" className="bg-secondary/5 text-secondary border-secondary/30 px-4 py-2 gap-2 font-mono text-[10px] tracking-widest uppercase">
             <Activity className="w-3 h-3 animate-pulse" />
-            Autonomous Demand Processor: ACTIVE
+            Autonomous Demand Processor: ACTIVE (2.5s)
           </Badge>
 
           <Button 
