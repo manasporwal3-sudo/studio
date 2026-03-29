@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart, Activity } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart, Activity, ArrowUpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +25,7 @@ function InventoryContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isExpanding, setIsExpanding] = useState(false);
+  const [isRefilling, setIsRefilling] = useState(false);
   const { toast } = useToast();
 
   const [newItem, setNewItem] = useState({
@@ -35,6 +36,42 @@ function InventoryContent() {
     reorderPoint: 5,
     sku: ''
   });
+
+  // Calculate items needing refill (less than 5)
+  const itemsNeedingRefill = useMemo(() => {
+    return inventory.filter(item => item.currentStock < 5);
+  }, [inventory]);
+
+  const handleAutoRefill = async () => {
+    if (!user?.uid || itemsNeedingRefill.length === 0) return;
+    
+    setIsRefilling(true);
+    try {
+      itemsNeedingRefill.forEach(item => {
+        const docRef = doc(db, 'users', user.uid, 'inventory', item.id);
+        updateDocumentNonBlocking(docRef, {
+          currentStock: 30,
+          lastUpdated: new Date().toISOString()
+        });
+      });
+
+      recordStoreActivity(db, user.uid);
+      logPlatformActivity(db, {
+        type: 'restock',
+        message: `AUTO_REFILL: ${itemsNeedingRefill.length} SKUs recalibrated to 30 units.`,
+        storeId: userProfile?.storeName || user.uid,
+        impact: 'HIGH'
+      });
+
+      toast({ 
+        title: "Neural Stock Calibration", 
+        description: `${itemsNeedingRefill.length} SKUs successfully refilled to 30 units.`,
+        className: "bg-[#060d1c] border-secondary/30 text-secondary font-mono text-[10px] uppercase tracking-widest"
+      });
+    } finally {
+      setIsRefilling(false);
+    }
+  };
 
   const handleExpandMesh = async () => {
     if (!user?.uid) return;
@@ -106,11 +143,9 @@ function InventoryContent() {
   const processAutomatedOrder = useCallback(async () => {
     if (!inventory || inventory.length === 0 || !user?.uid) return;
 
-    // Simulate a "Neural Demand Burst" (1-2 random SKUs for high frequency)
     const basketSize = Math.floor(Math.random() * 2) + 1;
     const basket: InventoryItem[] = [];
     
-    // Efficiency: Sort and pick items with stock
     const availableItems = inventory.filter(i => i.currentStock > 0);
     if (availableItems.length === 0) return;
 
@@ -126,7 +161,7 @@ function InventoryContent() {
       basket.forEach(item => {
         const docRef = doc(db, 'users', user.uid, 'inventory', item.id);
         updateDocumentNonBlocking(docRef, {
-          currentStock: item.currentStock - 1,
+          currentStock: Math.max(0, item.currentStock - 1),
           lastUpdated: new Date().toISOString()
         });
       });
@@ -148,11 +183,9 @@ function InventoryContent() {
     }
   }, [inventory, user?.uid, userProfile?.storeName, db, toast]);
 
-  // Set up the high-velocity autonomous processor heartbeat
   useEffect(() => {
     if (isLoading || inventory.length === 0) return;
 
-    // Trigger every 2 to 3 seconds
     const interval = setInterval(() => {
       processAutomatedOrder();
     }, 2500);
@@ -168,9 +201,20 @@ function InventoryContent() {
           <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">Local Node Inventory Matrix</p>
         </div>
         <div className="flex flex-wrap gap-4">
+          {itemsNeedingRefill.length > 0 && (
+            <Button 
+              onClick={handleAutoRefill}
+              disabled={isRefilling}
+              className="bg-accent text-black font-headline text-[10px] tracking-widest px-6 shadow-[0_0_20px_rgba(0,212,255,0.3)] animate-pulse"
+            >
+              {isRefilling ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <ArrowUpCircle className="w-4 h-4 mr-2" />}
+              AUTO-REFILL LOW STOCK ({itemsNeedingRefill.length})
+            </Button>
+          )}
+
           <Badge variant="outline" className="bg-secondary/5 text-secondary border-secondary/30 px-4 py-2 gap-2 font-mono text-[10px] tracking-widest uppercase">
             <Activity className="w-3 h-3 animate-pulse" />
-            Autonomous Demand Processor: ACTIVE (2.5s)
+            Autonomous Demand: ACTIVE (2.5s)
           </Badge>
 
           <Button 
