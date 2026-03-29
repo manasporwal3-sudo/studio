@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Crosshair, Map, Navigation, ShoppingBag, DollarSign, Activity, Package, Terminal } from "lucide-react";
+import { Crosshair, Map, Navigation, ShoppingBag, DollarSign, Activity, Package, Terminal, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
 import { cn } from "@/lib/utils";
 
 export default function RiderClusterPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItem, setScannedItem] = useState<null | {id: string, name: string}>(null);
+  const { profit, deliveries, efficiency, isIncentiveUnlocked, isLoading } = useDashboardMetrics();
 
   const handleScan = () => {
     setIsScanning(true);
@@ -23,12 +25,23 @@ export default function RiderClusterPage() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-12">
-        <div className="border-b border-white/5 pb-8">
-          <div className="flex items-center gap-4 mb-2">
-            <Terminal className="w-6 h-6 text-primary" />
-            <h1 className="font-headline text-3xl font-black uppercase tracking-tighter italic text-white">Field Agent OS</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
+          <div>
+            <div className="flex items-center gap-4 mb-2">
+              <Terminal className="w-6 h-6 text-primary" />
+              <h1 className="font-headline text-3xl font-black uppercase tracking-tighter italic text-white">Field Agent OS</h1>
+            </div>
+            <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Mission-Critical Rider Interface // Node Telemetry v10.5</p>
           </div>
-          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Mission-Critical Rider Interface // Node Telemetry v10.4</p>
+          <div className="flex items-center gap-4">
+            <div className={cn(
+              "px-4 py-2 border flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest",
+              isIncentiveUnlocked ? "bg-secondary/10 border-secondary text-secondary" : "bg-white/5 border-white/10 text-muted-foreground"
+            )}>
+              {isIncentiveUnlocked ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+              {isIncentiveUnlocked ? "INCENTIVE PROTOCOL: ACTIVE" : "INCENTIVE PROTOCOL: LOCKED"}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -118,27 +131,56 @@ export default function RiderClusterPage() {
           </div>
         </div>
 
-        {/* Earnings Suite */}
+        {/* Earnings Suite - Real-time Data Mapping */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatProgress label="Today's Earnings" value={840} max={1000} prefix="$" />
-          <StatProgress label="Deliveries" value={14} max={20} />
-          <StatProgress label="Efficiency" value={98} max={100} suffix="%" />
-          <StatProgress label="Incentive Lock" value={65} max={100} suffix="%" color="bg-accent" />
+          <StatProgress 
+            label="Realized Profit" 
+            value={profit} 
+            max={5000} 
+            prefix="₹" 
+            isLoading={isLoading} 
+          />
+          <StatProgress 
+            label="Node Deliveries" 
+            value={deliveries} 
+            max={100} 
+            isLoading={isLoading} 
+          />
+          <StatProgress 
+            label="Mesh Efficiency" 
+            value={efficiency} 
+            max={100} 
+            suffix="%" 
+            isLoading={isLoading} 
+          />
+          <StatProgress 
+            label="Incentive Lock" 
+            value={isIncentiveUnlocked ? 100 : Math.min(deliveries * 2, 99)} 
+            max={100} 
+            suffix="%" 
+            color={isIncentiveUnlocked ? "bg-secondary" : "bg-accent"} 
+            isLoading={isLoading} 
+          />
         </div>
       </div>
     </DashboardLayout>
   );
 }
 
-function StatProgress({ label, value, max, prefix = '', suffix = '', color = 'bg-primary' }: any) {
+function StatProgress({ label, value, max, prefix = '', suffix = '', color = 'bg-primary', isLoading }: any) {
   return (
     <div className="tactical-panel p-6 before:hidden border border-white/5 space-y-4">
       <div className="flex justify-between items-center">
         <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">{label}</span>
-        <div className="font-mono text-lg font-bold">{prefix}{value}{suffix}</div>
+        <div className={cn("font-mono text-lg font-bold", isLoading && "animate-pulse")}>
+          {isLoading ? "---" : `${prefix}${value}${suffix}`}
+        </div>
       </div>
       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-        <div className={cn("h-full transition-all duration-1000", color)} style={{ width: `${(value/max)*100}%` }} />
+        <div 
+          className={cn("h-full transition-all duration-1000", color)} 
+          style={{ width: `${Math.min((value/max)*100, 100)}%` }} 
+        />
       </div>
     </div>
   );
