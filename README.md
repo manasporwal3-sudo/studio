@@ -1,7 +1,6 @@
 # Firebase Studio
 🚀 Overview
-NEURO-FAST is a next-generation inventory management system designed to solve the "Ghost Stock" crisis in high-velocity Darkstores. Built for the Economic Times Gen AI Hackathon, it uses a background neural simulation engine to predict stock depletion and automate reordering before the customer even clicks "buy."
-
+NEURO-FAST is a next-generation inventory management system designed to solve the "Ghost Stock" crisis in high-velocity Darkstores. Built for the Economic Times Gen AI Hackathon, it is a demo of how background neural simulation engine can be used to predict stock depletion. 
 🛡️ The Problem
 In quick-commerce (10-minute delivery), traditional inventory systems fail due to:
 
@@ -38,11 +37,8 @@ Styling: Tailwind CSS (Custom "Logistics Command Center" Theme)
 
 Backend: Firebase Authentication & Firestore (Real-time NoSQL)
 
-Deployment: Vercel (Frontend) & Render (Backend Simulation Logic)
+Deployment: Vercel 
 
-Database Design: * darkstores/{storeId}: Master store profiles.
-
-darkstores/{storeId}/inventory: Real-time SKU tracking.
-
+Database Design: firestore
 📸 Cyber-Industrial Interface
 The UI is inspired by modern telemetry and aerospace command centers, utilizing glassmorphism, high-contrast accents, and reactive data-visuals.
