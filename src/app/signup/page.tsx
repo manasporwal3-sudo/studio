@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -63,7 +62,6 @@ const signupSchema = z.object({
   inventory: z.array(inventoryItemSchema).min(1, "At least one SKU is required for node activation"),
   expectedOrders: z.coerce.number().min(1, "Required"),
   outletsCount: z.coerce.number().min(1, "Required"),
-  plan: z.enum(["Free", "Pro"]),
   terms: z.boolean().refine(val => val === true, "Must accept terms")
 }).refine(data => data.password === data.confirmPassword, {
   message: "Neural Keys (passwords) do not match",
@@ -86,7 +84,6 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     mode: 'onBlur',
     defaultValues: { 
-      plan: 'Free', 
       terms: false,
       inventory: [{ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' }]
     }
@@ -168,7 +165,7 @@ export default function SignupPage() {
         storeName: data.storeName,
         city: data.city,
         role: role,
-        plan: data.plan,
+        plan: 'Pro', // Auto-defaulting to Pro for all new nodes
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -389,25 +386,7 @@ export default function SignupPage() {
                           <Input type="number" {...register('outletsCount')} className="cyber-input h-12" />
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <label className="text-[8px] font-mono uppercase text-muted-foreground tracking-widest">NEURAL PLAN SELECTION</label>
-                        <div className="flex gap-4">
-                          {["Free", "Pro"].map((p) => (
-                            <button
-                              key={p}
-                              type="button"
-                              onClick={() => setValue('plan', p as any)}
-                              className={cn(
-                                "flex-1 p-4 tactical-panel transition-all before:hidden flex justify-between items-center",
-                                formData.plan === p ? "bg-primary/20 border-primary shadow-[0_0_15px_rgba(0,212,255,0.2)]" : "bg-white/5 border-white/5"
-                              )}
-                            >
-                              <span className="font-headline text-[10px] uppercase">{p} NODE</span>
-                              <span className="font-mono text-[9px] opacity-40">{p === 'Free' ? '0/MO' : '99/MO'}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      
                       <div className="flex items-start space-x-4 p-4 bg-white/5 border border-white/5">
                         <Checkbox 
                           id="terms" 
