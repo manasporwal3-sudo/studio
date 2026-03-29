@@ -6,13 +6,15 @@ import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
 import { doc, collection } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, recordStoreActivity } from '@/firebase/non-blocking-updates';
+import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
+import { INITIAL_INVENTORY_MESH } from '@/lib/inventory-data';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +25,7 @@ function InventoryContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
   const { toast } = useToast();
 
   const [newItem, setNewItem] = useState({
@@ -33,6 +36,22 @@ function InventoryContent() {
     reorderPoint: 5,
     sku: ''
   });
+
+  const handleExpandMesh = async () => {
+    if (!user?.uid) return;
+    setIsExpanding(true);
+    try {
+      await bulkUploadInventory(db, user.uid, INITIAL_INVENTORY_MESH, (count) => {
+        // Progress tracking optional
+      });
+      recordStoreActivity(db, user.uid);
+      toast({ title: "Mesh Expansion Complete", description: "50+ SKUs successfully enrolled in the local node." });
+    } catch (e) {
+      toast({ title: "Expansion Failed", description: "Could not synchronize industrial mesh.", variant: "destructive" });
+    } finally {
+      setIsExpanding(false);
+    }
+  };
 
   const handleAddSKU = async () => {
     if (!newItem.name || !user?.uid) return;
@@ -105,6 +124,15 @@ function InventoryContent() {
           <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">Local Node Inventory Matrix</p>
         </div>
         <div className="flex flex-wrap gap-4">
+          <Button 
+            onClick={handleExpandMesh}
+            disabled={isExpanding || isLoading}
+            className="bg-secondary/20 text-secondary border border-secondary/30 font-headline text-[10px] tracking-widest px-6 hover:bg-secondary/40"
+          >
+            {isExpanding ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Layers className="w-4 h-4 mr-2" />}
+            EXPAND MESH (50+ SKUs)
+          </Button>
+
           <Button 
             onClick={simulateOrder}
             disabled={isSimulating || isLoading || inventory.length === 0}
