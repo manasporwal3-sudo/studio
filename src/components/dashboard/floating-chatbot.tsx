@@ -63,7 +63,7 @@ export function FloatingChatbot() {
   };
 
   return (
-    <div className="fixed bottom-10 left-10 z-[60]">
+    <div className="fixed top-24 right-10 z-[60]">
       {!isOpen ? (
         <Button 
           onClick={() => setIsOpen(true)}
@@ -72,7 +72,7 @@ export function FloatingChatbot() {
           <Cpu className="w-8 h-8 group-hover:rotate-12 transition-transform" />
         </Button>
       ) : (
-        <Card className="w-96 h-[550px] tactical-panel bg-[#060d1c] border-primary/40 flex flex-col shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-in slide-in-from-bottom-5 duration-300">
+        <Card className="w-96 h-[550px] tactical-panel bg-[#060d1c] border-primary/40 flex flex-col shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-in slide-in-from-top-5 duration-300">
           <CardHeader className="bg-primary/10 p-5 border-b border-white/5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <Terminal className="w-5 h-5 text-primary" />
