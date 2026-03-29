@@ -165,12 +165,36 @@ export default function SignupPage() {
         storeName: data.storeName,
         city: data.city,
         role: role,
-        plan: 'Pro', // Auto-defaulting to Pro for all new nodes
+        plan: 'Pro',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
+      // 1. Provision User Identity
       setDocumentNonBlocking(doc(db, 'users', user.uid), userData, { merge: true });
+      
+      // 2. Provision Operational DarkStore Metadata (UID Consistency)
+      if (role === 'store') {
+        const darkStoreData = {
+          storeId: user.uid,
+          storeName: data.storeName,
+          ownerUid: user.uid,
+          city: data.city,
+          address: data.address,
+          pinCode: data.pinCode,
+          gstNumber: data.gstNumber,
+          plan: 'Pro',
+          metrics: {
+            totalOrders: 0,
+            activeRiders: 0,
+            revenue: 0,
+            stockHealth: 100
+          },
+          createdAt: new Date().toISOString(),
+        };
+        setDocumentNonBlocking(doc(db, 'darkStores', user.uid), darkStoreData, { merge: true });
+      }
+
       recordStoreActivity(db, user.uid);
       
       if (role === 'store') {

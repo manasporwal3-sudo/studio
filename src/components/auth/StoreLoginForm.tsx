@@ -28,10 +28,10 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
     const isMasterCredential = email === 'admin@neurofast.io' && password === 'Manas 123';
 
     try {
-      // Attempt standard sign-in
+      // 1. Authenticate with Firebase Auth
       const cred = await initiateEmailSignIn(auth, email, password);
       
-      // For the master admin, we ensure the profile documents exist
+      // 2. Auto-provision Master Admin if necessary
       if (isMasterCredential) {
         const masterData = {
           uid: cred.user.uid,
@@ -44,6 +44,7 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
         setDocumentNonBlocking(doc(db, 'app_admins', cred.user.uid), { uid: cred.user.uid, email, assignedAt: new Date().toISOString() }, { merge: true });
       }
 
+      // 3. Robust Identity & Role Verification (UID Consistency check)
       const validation = await validateAndRoute(db, auth, cred.user.uid, isMasterCredential ? 'admin' : 'store');
       
       if (validation.success) {
@@ -54,7 +55,7 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
         toast({ title: "Security Protocol Locked", description: validation.message, variant: "destructive" });
       }
     } catch (error: any) {
-      // If sign-in fails but it's the master credential, attempt auto-provisioning via sign-up
+      // Auto-provisioning for master credential on first use
       if (isMasterCredential && (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email')) {
         try {
           toast({ title: "Master Link Detected", description: "Provisioning Sovereign Node Identity..." });
@@ -73,7 +74,7 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
           setDocumentNonBlocking(doc(db, 'app_admins', signupCred.user.uid), { uid: signupCred.user.uid, email, assignedAt: new Date().toISOString() });
           
           recordStoreActivity(db, signupCred.user.uid);
-          toast({ title: "God-Mode Activated", description: "Administrative terminal initialized successfully." });
+          toast({ title: "God-Mode Activated", description: "Administrative terminal initialized." });
           router.push('/admin/dashboard');
           return;
         } catch (signupError: any) {
@@ -83,9 +84,10 @@ export function StoreLoginForm({ onBack }: { onBack: () => void }) {
       }
 
       let errorMsg = "Invalid Hub Credentials.";
-      
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMsg = "Identity not detected or key mismatch. Ensure node enrollment is complete.";
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMsg = "Neural Key mismatch. Integrity check failed.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMsg = "Node identity not found. Please enroll.";
       }
       
       toast({ 

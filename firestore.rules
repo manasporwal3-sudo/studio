@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * NEURO·FAST SOVEREIGN — v17.0 SUPREME SECURITY PROTOCOL
+     * NEURO·FAST SOVEREIGN — v17.1 SUPREME SECURITY PROTOCOL
      * Implements absolute recursive God-Mode for master administrative identities.
      */
 
@@ -22,19 +22,8 @@ service cloud.firestore {
     }
 
     // --- SUPREME GOD MODE BYPASS ---
-    // Grants absolute recursive read/write access across the entire database.
     match /{allDocuments=**} {
       allow read, write: if isMasterAdmin();
-    }
-
-    // Explicitly allow collection listing for the master admin to populate the dashboard matrix.
-    match /users {
-      allow list: if isMasterAdmin();
-    }
-
-    // Explicitly allow collection group queries for the 'inventory' ID.
-    match /{path=**}/inventory/{itemId} {
-      allow read: if isMasterAdmin();
     }
 
     // --- CORE COLLECTION RULES ---
@@ -47,6 +36,11 @@ service cloud.firestore {
       match /{allSubcollections=**} {
         allow read, write: if (isSignedIn() && request.auth.uid == userId) || isMasterAdmin();
       }
+    }
+
+    match /darkStores/{storeId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (request.auth.uid == storeId || isMasterAdmin());
     }
 
     match /riders/{riderId} {
