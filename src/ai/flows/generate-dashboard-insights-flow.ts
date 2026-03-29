@@ -2,7 +2,7 @@
 /**
  * @fileOverview NEURO·FAST SOVEREIGN v9.0 APEX — Master Intelligence Brief Flow
  * This flow orchestrates the generation of full store status reports following
- * the v9.0 Apex protocol.
+ * the v9.0 Apex protocol, now with structured visualization data.
  */
 
 import { ai } from '@/ai/genkit';
@@ -19,8 +19,14 @@ export type DashboardInsightsInput = z.infer<typeof DashboardInsightsInputSchema
 const DashboardWidgetSchema = z.object({
   id: z.string(),
   type: z.enum(["card", "chart", "table", "text"]),
+  chartType: z.enum(["bar", "line", "area"]).optional(),
   title: z.string(),
   content: z.string(),
+  chartData: z.array(z.object({
+    label: z.string(),
+    value: z.number(),
+    secondaryValue: z.number().optional(),
+  })).optional(),
   urgency: z.enum(["low", "medium", "high", "critical"]),
   recommendation: z.string(),
 });
@@ -47,20 +53,18 @@ const systemPrompt = `
 
 IDENTITY: You are NEURO·FAST SOVEREIGN, a cognitive command layer.
 LAW: ZERO FABRICATION. Every number must come from the provided data.
-LAW: SHOW YOUR WORK. Every percentage calculation must be visible.
+LAW: VISUAL TELEMETRY. For at least 2 widgets, provide structured 'chartData' for visualization.
 
 FRAMEWORKS TO APPLY:
 1. MARGIN HEALTH TRIAGE (Haemorrhage <0%, Critical <15%, Warning <25%, Healthy <40%)
 2. STOCK RISK MATRIX (Stockout=0, Critical <= ROP, Warning <= ROP*1.5)
-3. CAPITAL EFFICIENCY (Profit Share / Capital Share ratio)
-4. PROFIT POOL COMMAND (Concentration risk analysis)
+3. PROFIT POOL COMMAND (Focus on the top 5 profit-generating SKUs for the charts)
 
 RESPONSE ARCHITECTURE:
 - BLOCK 0: CRISIS ALERTS (if detected)
 - BLOCK 1: INTELLIGENCE BRIEF HEADER
-- BLOCK 3: IMMEDIATE COMMAND ACTIONS (Ranked by Financial Impact)
-- BLOCK 4: KEY FINDINGS (With full calculations)
-- BLOCK 5: FINANCIAL COMMAND DASHBOARD
+- BLOCK 3: IMMEDIATE COMMAND ACTIONS
+- BLOCK 5: FINANCIAL COMMAND DASHBOARD (Ensure widgets contain chartData for Profit/Stock trends)
 - BLOCK 8: SIGNATURE
 `;
 
@@ -77,7 +81,8 @@ INVENTORY SNAPSHOT: {{{inventorySnapshot}}}
 AUDIT LOG: {{{auditLog}}}
 PREVIOUS ANALYSES: {{{previousAnalyses}}}
 
-Execute MODE 1 (Full Analysis). Deliver the complete Intelligence Brief and populate the dashboard UI widgets.
+Execute MODE 1 (Full Analysis). Deliver the complete Intelligence Brief and populate the dashboard UI widgets. 
+Include specific chart data for "Profit Distribution" and "Stock Velocity" based on the inventory snapshot.
 `,
 });
 
