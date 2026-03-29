@@ -191,7 +191,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         
-        {user && pathname !== '/login' && pathname !== '/signup' && <FloatingChatbot />}
+        {/* GROK BOT ONLY FOR OPERATORS (NON-ADMIN) */}
+        {user && role !== 'admin' && pathname !== '/login' && pathname !== '/signup' && <FloatingChatbot />}
       </div>
     </div>
   );
