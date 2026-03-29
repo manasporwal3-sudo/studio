@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +24,6 @@ function InventoryContent() {
   const { inventory, isLoading } = useDarkStoreOS(user?.uid || '');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [isExpanding, setIsExpanding] = useState(false);
   const { toast } = useToast();
 
@@ -103,14 +102,10 @@ function InventoryContent() {
     toast({ title: "SKU Terminated", description: "Item removed from the neural matrix." });
   };
 
-  const simulateOrder = async () => {
-    if (!inventory || inventory.length === 0 || !user?.uid) {
-      toast({ title: "Simulation Aborted", description: "Empty node mesh. Add SKUs to simulate.", variant: "destructive" });
-      return;
-    }
+  // Autonomous Demand Engine Logic
+  const processAutomatedOrder = useCallback(async () => {
+    if (!inventory || inventory.length === 0 || !user?.uid) return;
 
-    setIsSimulating(true);
-    
     // Simulate a "Neural Demand Burst" (1-3 random SKUs)
     const basketSize = Math.floor(Math.random() * 3) + 1;
     const basket: InventoryItem[] = [];
@@ -135,22 +130,33 @@ function InventoryContent() {
       recordStoreActivity(db, user.uid);
       logPlatformActivity(db, {
         type: 'order',
-        message: `NEURAL_ORDER_FULFILLED: ${basket.length} SKUs processed.`,
+        message: `AUTO_DEMAND_FULFILLED: ${basket.length} SKUs processed.`,
         storeId: userProfile?.storeName || user.uid,
         impact: 'NOMINAL'
       });
 
       toast({ 
-        title: "Order Fulfilled", 
+        title: "Autonomous Order Processed", 
         description: `Deducted stock for: ${basket.map(b => b.name).join(', ')}`,
         className: "bg-secondary/10 border-secondary/30 text-secondary"
       });
-    } else {
-      toast({ title: "Simulation Failure", description: "All selected SKUs are currently depleted.", variant: "destructive" });
     }
-    
-    setTimeout(() => setIsSimulating(false), 800);
-  };
+  }, [inventory, user?.uid, userProfile?.storeName, db, toast]);
+
+  // Set up the autonomous processor heartbeat
+  useEffect(() => {
+    if (isLoading || inventory.length === 0) return;
+
+    // Trigger every 30 seconds with a bit of randomness
+    const interval = setInterval(() => {
+      const chance = Math.random();
+      if (chance > 0.3) { // 70% chance to process an order every pulse
+        processAutomatedOrder();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [inventory.length, isLoading, processAutomatedOrder]);
 
   return (
     <div className="space-y-8">
@@ -160,6 +166,11 @@ function InventoryContent() {
           <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">Local Node Inventory Matrix</p>
         </div>
         <div className="flex flex-wrap gap-4">
+          <Badge variant="outline" className="bg-secondary/5 text-secondary border-secondary/30 px-4 py-2 gap-2 font-mono text-[10px] tracking-widest uppercase">
+            <Activity className="w-3 h-3 animate-pulse" />
+            Autonomous Demand Processor: ACTIVE
+          </Badge>
+
           <Button 
             onClick={handleExpandMesh}
             disabled={isExpanding || isLoading}
@@ -167,15 +178,6 @@ function InventoryContent() {
           >
             {isExpanding ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Layers className="w-4 h-4 mr-2" />}
             EXPAND MESH (50+ SKUs)
-          </Button>
-
-          <Button 
-            onClick={simulateOrder}
-            disabled={isSimulating || isLoading || inventory.length === 0}
-            className="bg-destructive/20 text-destructive border border-destructive/30 font-headline text-[10px] tracking-widest px-6 hover:bg-destructive/40"
-          >
-            {isSimulating ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
-            SIMULATE DEMAND BURST
           </Button>
 
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
