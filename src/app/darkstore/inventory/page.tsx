@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { useDarkStoreOS, type InventoryItem } from "@/hooks/use-darkstore-os";
 import { useFirestore, useUser } from "@/firebase";
 import { doc, collection } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, recordStoreActivity } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, recordStoreActivity, logPlatformActivity } from '@/firebase/non-blocking-updates';
 import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
 import { INITIAL_INVENTORY_MESH } from '@/lib/inventory-data';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers } from "lucide-react";
+import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 function InventoryContent() {
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const db = useFirestore();
   const { inventory, isLoading } = useDarkStoreOS(user?.uid || '');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -45,6 +45,12 @@ function InventoryContent() {
         // Progress tracking optional
       });
       recordStoreActivity(db, user.uid);
+      logPlatformActivity(db, {
+        type: 'system',
+        message: `Node mesh expanded with ${INITIAL_INVENTORY_MESH.length} SKUs.`,
+        storeId: userProfile?.storeName || user.uid,
+        impact: 'HIGH'
+      });
       toast({ title: "Mesh Expansion Complete", description: "50+ SKUs successfully enrolled in the local node." });
     } catch (e) {
       toast({ title: "Expansion Failed", description: "Could not synchronize industrial mesh.", variant: "destructive" });
@@ -64,6 +70,12 @@ function InventoryContent() {
     });
     
     recordStoreActivity(db, user.uid);
+    logPlatformActivity(db, {
+      type: 'system',
+      message: `Manual SKU Enrollment: ${newItem.name}`,
+      storeId: userProfile?.storeName || user.uid
+    });
+    
     setIsAddModalOpen(false);
     setNewItem({ name: '', currentStock: 0, costPrice: 0, sellingPrice: 0, reorderPoint: 5, sku: '' });
     toast({ title: "SKU Synchronized", description: "Node mesh updated with new data vector." });
@@ -98,22 +110,46 @@ function InventoryContent() {
     }
 
     setIsSimulating(true);
-    const randomIndex = Math.floor(Math.random() * inventory.length);
-    const target = inventory[randomIndex];
+    
+    // Simulate a "Neural Demand Burst" (1-3 random SKUs)
+    const basketSize = Math.floor(Math.random() * 3) + 1;
+    const basket: InventoryItem[] = [];
+    
+    for(let i = 0; i < basketSize; i++) {
+      const randomIndex = Math.floor(Math.random() * inventory.length);
+      const target = inventory[randomIndex];
+      if (target.currentStock > 0 && !basket.find(b => b.id === target.id)) {
+        basket.push(target);
+      }
+    }
 
-    if (target.currentStock > 0) {
-      const docRef = doc(db, 'users', user.uid, 'inventory', target.id);
-      updateDocumentNonBlocking(docRef, {
-        currentStock: target.currentStock - 1,
-        lastUpdated: new Date().toISOString()
+    if (basket.length > 0) {
+      basket.forEach(item => {
+        const docRef = doc(db, 'users', user.uid, 'inventory', item.id);
+        updateDocumentNonBlocking(docRef, {
+          currentStock: item.currentStock - 1,
+          lastUpdated: new Date().toISOString()
+        });
       });
+
       recordStoreActivity(db, user.uid);
-      toast({ title: "Order Simulated", description: `Reduced stock for ${target.name}.` });
+      logPlatformActivity(db, {
+        type: 'order',
+        message: `NEURAL_ORDER_FULFILLED: ${basket.length} SKUs processed.`,
+        storeId: userProfile?.storeName || user.uid,
+        impact: 'NOMINAL'
+      });
+
+      toast({ 
+        title: "Order Fulfilled", 
+        description: `Deducted stock for: ${basket.map(b => b.name).join(', ')}`,
+        className: "bg-secondary/10 border-secondary/30 text-secondary"
+      });
     } else {
-      toast({ title: "Out of Stock", description: `${target.name} cannot fulfill the simulation.`, variant: "destructive" });
+      toast({ title: "Simulation Failure", description: "All selected SKUs are currently depleted.", variant: "destructive" });
     }
     
-    setTimeout(() => setIsSimulating(false), 500);
+    setTimeout(() => setIsSimulating(false), 800);
   };
 
   return (
@@ -138,8 +174,8 @@ function InventoryContent() {
             disabled={isSimulating || isLoading || inventory.length === 0}
             className="bg-destructive/20 text-destructive border border-destructive/30 font-headline text-[10px] tracking-widest px-6 hover:bg-destructive/40"
           >
-            <Zap className="w-4 h-4 mr-2" />
-            SIMULATE ORDER
+            {isSimulating ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
+            SIMULATE DEMAND BURST
           </Button>
 
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
