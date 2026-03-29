@@ -8,13 +8,13 @@ import { doc, collection } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, recordStoreActivity, logPlatformActivity } from '@/firebase/non-blocking-updates';
 import { bulkUploadInventory } from '@/firebase/firestore/bulk-upload';
 import { INITIAL_INVENTORY_MESH } from '@/lib/inventory-data';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Cpu, RefreshCw, Crosshair, Package, Zap, Plus, Trash2, Edit2, AlertCircle, Layers, ShoppingCart, Activity, ArrowUpCircle } from "lucide-react";
+import { RefreshCw, Package, Plus, Trash2, Edit2, AlertCircle, Layers, Activity, ArrowUpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -323,20 +323,6 @@ function InventoryContent() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="tactical-panel border-none bg-black/60 before:bg-primary">
-            <CardHeader>
-              <CardTitle className="text-xs font-headline flex items-center gap-2">
-                <Crosshair className="w-4 h-4 text-primary" />
-                SMART SCANNER
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/5 gap-4">
-              <Package className="w-8 h-8 text-white/10" />
-              <p className="text-[9px] font-mono text-muted-foreground uppercase text-center">Frame Alignment Required</p>
-              <Button size="sm" variant="outline" className="text-[8px] font-mono border-primary/20 text-primary">INITIATE CAMERA</Button>
-            </CardContent>
-          </Card>
-
           {inventory.some(i => i.status === 'critical') && (
             <Card className="tactical-panel border-none bg-destructive/10 before:bg-destructive animate-pulse">
               <CardContent className="p-6 flex items-center gap-4">
