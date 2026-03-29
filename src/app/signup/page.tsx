@@ -293,7 +293,7 @@ export default function SignupPage() {
                       <Textarea placeholder="FULL GEOSPATIAL ADDRESS" {...register('address')} className="cyber-input min-h-[100px]" />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input placeholder="PIN CODE (6 DIGITS)" {...register('pinCode')} className="cyber-input h-12" />
-                        <Input placeholder="GST IDENTIFIER (15 CHARS)" {...register('gstNumber')} className="cyber-input h-12" />
+                        <Input placeholder="GST IDENTIFIER (15 CHARS) (OPTIONAL)" {...register('gstNumber')} className="cyber-input h-12" />
                       </div>
                     </div>
                   </div>
@@ -329,7 +329,7 @@ export default function SignupPage() {
                             </div>
                             <div className="space-y-1.5">
                               <label className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 ml-1">
-                                <Info className="w-3 h-3" /> SKU IDENTIFIER CODE
+                                <Info className="w-3 h-3" /> SKU IDENTIFIER CODE (OPTIONAL)
                               </label>
                               <Input placeholder="HUB-SKU-001" {...register(`inventory.${index}.sku` as const)} className="cyber-input h-11" />
                             </div>
